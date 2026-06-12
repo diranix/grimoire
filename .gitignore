@@ -1,0 +1,8 @@
+# Ignore everything by default
+*
+
+# Allow only these
+!.gitignore
+!lac-setup.md
+!LICENSE
+!README.md
