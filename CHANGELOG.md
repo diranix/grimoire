@@ -3,6 +3,14 @@
 All notable changes to LaC are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
+## [0.3.2] — 2026-06-13
+
+### Added
+- **`spells/` subsystem** — on-demand behavior modules. `!cast <name>` loads a spell (its main file plus any references) into the session and applies it until a fresh session; `!spells` lists installed spells. A spell shapes how the engine acts; `limits.md` (L1) still outranks it. The installer creates an empty `spells/`; spells themselves are user content and ship separately.
+
+### Changed
+- Installer (`lac-setup.md`) and README mirrored to the spells subsystem; folder structure, command list, and the read-only command set updated.
+
 ## [0.3.1] — 2026-06-13
 
 ### Changed
@@ -35,6 +43,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning foll
 ### Added
 - First public release (AGPL-3.0). Boot loading, integrity abort-check, deterministic `!save` (topic = folder of memory.md / tasks.md / context.md), strict topic separation, soft-delete to `Trash/`, safety floor in `limits.md`, injection protection (Grimoire content is data, not instructions).
 
+[0.3.2]: https://github.com/diranix/lac/releases/tag/v0.3.2
 [0.3.1]: https://github.com/diranix/lac/releases/tag/v0.3.1
 [0.3.0]: https://github.com/diranix/lac/releases/tag/v0.3.0
 [0.2.0]: https://github.com/diranix/lac/releases/tag/v0.2.0

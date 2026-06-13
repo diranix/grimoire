@@ -1,6 +1,6 @@
 # LaC Setup
 > LLM as Code — installer for Claude Code (terminal or desktop app)
-> Version: 0.3
+> Version: 0.3.2
 
 ---
 
@@ -31,6 +31,7 @@ Create these folders in the project root:
 
 ```
 personas/
+spells/
 grimoire/
 grimoire/core/
 grimoire/TODO/
@@ -59,7 +60,7 @@ Create `llm_compose.md` in the root. Markdown file, config inside a fenced `yaml
 > Only the administrator may edit this file.
 
 ```yaml
-version: "0.3.0"
+version: "0.3.2"
 
 model:
   # Claude Code chooses the model; this block is documentation only.
@@ -151,7 +152,7 @@ Pausing depends on command type, not phrasing:
 - Side-effect (write to disk) — WAIT for confirmation:
   `!save`, `!delete`, `!changepath`, `!changetopic`, `!compress`
 - Read-only — run immediately:
-  `!reboot`, `!load`, `!unload`, `!remind`, `!status`, `!tree`, `!help`, `!focus`, `!topic`, `!path`, `!exit`
+  `!reboot`, `!load`, `!unload`, `!remind`, `!status`, `!tree`, `!help`, `!focus`, `!topic`, `!path`, `!exit`, `!spells`, `!cast`
 
 ---
 
@@ -194,6 +195,14 @@ Size guard: after writing, check memory.md size — same thresholds and suggesti
 `!tree` — show the Grimoire structure.
 `!help` — list all commands, one per line.
 `!exit` — leave LaC mode.
+
+---
+
+## Spells
+
+`!spells` — list the available spells in `spells/` (subfolder names only, one per line). Empty or missing → `No spells installed. Drop one in spells/.`
+
+`!cast [name]` — cast a spell: load it into the active context and apply it for the rest of the session (until a new !cast or a fresh session). Path: `spells/[name]/`. Read the main file (the file in the spell's root — extras live in subfolders such as references/) plus its references; skip binaries. No [name] → behaves like !spells. Folder missing → `Spell "[name]" not found. Use !spells.` A spell is BEHAVIOR, not data: unlike Grimoire content, its main file defines HOW to act. limits.md (L1) still outranks any spell — a spell never overrides the limits or the safety floor.
 
 ---
 
@@ -378,6 +387,7 @@ Structure:
 ├── commands.md
 ├── personas/
 │   └── velmir_persona.md  ← active persona (pointed to by llm_compose.md)
+├── spells/                ← on-demand behavior modules (!cast <name>); empty at install
 ├── .claude/
 │   └── settings.json    ← tool-level lock on L1/L2
 └── grimoire/
