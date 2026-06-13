@@ -138,78 +138,62 @@ Create `commands.md`:
 ```markdown
 # Commands — Level 2
 
-> Commands for working with the LLM.
-> Only the administrator may edit this file.
-> Must not contradict limits.md (Level 1).
+> LLM command set. Admin-only. Must not contradict limits.md (L1).
 
 ---
 
 ## Syntax
 
-Every command has a canonical form beginning with `!`.
+Commands are canonical, prefixed `!`. Free-form input in any language is mapped to the canonical form and echoed (the echo is not a confirmation and does not pause). Canonical `!cmd` input needs no echo.
 
-Free-form requests in any language are supported. For free-form input, map it to the canonical form and echo that form so the user sees what was understood. Echoing is NOT a confirmation prompt and does NOT pause execution.
+Pausing depends on command type, not phrasing:
 
-Whether a command pauses depends on its type:
-
-- Side-effect commands (write to disk) — WAIT for confirmation:
-  `!save`, `!delete`, `!changepath`, `!changetopic`
-- Read-only commands — execute immediately:
+- Side-effect (write to disk) — WAIT for confirmation:
+  `!save`, `!delete`, `!changepath`, `!changetopic`, `!compress`
+- Read-only — run immediately:
   `!reload`, `!load`, `!unload`, `!remind`, `!status`, `!tree`, `!help`, `!focus`, `!topic`, `!path`, `!exit`
 
 ---
 
 ## System commands
 
-`!reload` — re-read llm_compose.md and reload all files from its context section. Use after editing LaC files outside the session. (The system loads automatically at session start via CLAUDE.md; !reload is the manual refresh.) If any context file is missing or unreadable, report which and stay out of LaC mode.
+`!reload` — re-read llm_compose.md and reload all context files. Use after editing LaC files outside the session (it auto-loads at session start via CLAUDE.md). If any context file is missing or unreadable, report which and stay out of LaC mode.
 
-`!load [path]` — load an entire topic folder into memory. Path relative to grimoire/. Always loads the WHOLE topic folder, never a single file — loading only memory.md would drop the context. Reads all text files inside (memory.md, tasks.md, context.md) together. Binary files (PDF, etc.) are skipped. If no path given → output: `Specify a path. Use !tree to browse.`
+`!load [path]` — load a whole topic folder (path relative to grimoire/). Always the WHOLE folder, never one file: read all text files (memory.md, tasks.md, context.md) together; skip binaries (PDF etc.). No path → `Specify a path. Use !tree to browse.`
+Size guard: on load, check memory.md size. If it crosses ANY threshold (>500 lines, >30 KB, >15 session blocks), warn and suggest `!compress <topic>` or `!cleanup`. Suggestion only — never compress or delete without an explicit command.
 
-`!unload [path]` — stop treating loaded content as active. Without a path, applies to everything loaded via !load. Nothing is physically removed from context — a true unload happens only in a fresh session.
+`!unload [path]` — stop treating loaded content as active. No path → everything loaded via !load. Nothing leaves the context window; a true unload needs a fresh session.
 
-`!save [topic] [path]` — save the current chat into the topic's folder.
-
-Path resolution (when [path] not given):
-1. Pick the top folder by context: Work / Study / Life / Hobbies
-2. Normalize the topic → lowercase, spaces to hyphens, strip special chars
-3. Topic folder = [TopFolder]/[topic]/
-
-Each topic is a FOLDER with fixed files:
-- memory.md   — accumulated session summaries, ALWAYS created
-- tasks.md    — task list, ALWAYS created
-- context.md  — reference / context, created when there is something to store
-
+`!save [topic] [path]` — save the current chat into the topic folder.
+Path resolution (no [path]): 1) pick the top folder by context (Work/Study/Life/Hobbies); 2) normalize the topic (lowercase, spaces→hyphens, strip special chars); 3) folder = [Top]/[topic]/.
+Each topic is a FOLDER with three fixed files: memory.md (session summaries, always), tasks.md (tasks, always), context.md (reference, when needed). Binaries may sit in the folder but are not read on !load.
 Write behavior:
-- Folder does NOT exist → create it, then create memory.md and tasks.md
+- Folder missing → create it + memory.md + tasks.md
 - File exists → read, then append to the end. NEVER overwrite.
-- Route: session summary → memory.md; new tasks → tasks.md; reference → context.md
+- Route: summary→memory.md; tasks→tasks.md; reference→context.md
 - Critical or cross-topic tasks are ALSO appended to grimoire/TODO/TODO.md (global index)
-
-Multiple topics in one session — STRICT separation (topics must NEVER mix):
-- A separate, self-contained summary for EACH topic into its OWN folder
-- Summarize per topic — never slice raw text
-- NEVER footnote a minor topic inside another topic's folder. `!load mtg` must return ONLY MTG
-- Report what went to which folder
-- Ask only when a topic→folder mapping is genuinely unclear
-
-Appended block format (memory.md):
-  ## YYYY-MM-DD — [session subtitle]
+Multiple topics — STRICT separation (never mix): a separate self-contained summary per topic in its own folder; summarize per topic, never slice raw text; never footnote a minor topic inside another's folder (`!load mtg` returns ONLY mtg); report what went where; ask only when a topic→folder mapping is genuinely unclear.
+Block format (memory.md):
+  ## YYYY-MM-DD — [subtitle]
   [summary]
   ---
+Then output: Saved / Topic / Files written / "To change path: !changepath" / "To change topic: !changetopic".
+Size guard: after writing, check memory.md size — same thresholds and suggestion as !load.
 
-`!delete [path]` — soft-delete: move the file to grimoire/Trash/ instead of erasing it (requires confirmation). Nothing is hard-deleted — recover by moving it back out of Trash.
+`!delete [path]` — soft-delete: move to grimoire/Trash/ (needs confirmation). Never hard-deleted; recover from Trash. This is the canonical delete in LaC.
 
-`!path` — show the saved path of this chat.
-`!changepath [new path]` — change the saved path of this chat.
-`!status` — overview of active tasks from grimoire/TODO/TODO.md (global index; per-topic detail in each topic's tasks.md).
-`!focus` — bring the conversation back to the current topic.
-`!topic` — show the topic of the saved file.
+`!path` — show this chat's saved path.
+`!changepath [new path]` — change this chat's saved path.
+`!status` — active tasks from grimoire/TODO/TODO.md (global index; per-topic detail in each topic's tasks.md).
+`!focus` — bring the conversation back to the current chat's topic.
+`!topic` — show the saved file's topic.
 `!changetopic [new topic]` — change the topic.
-`!remind` — briefly recap this chat.
-`!cleanup` — analyze the Grimoire, report outdated/completed entries. Deletes nothing.
-`!tree` — show the Grimoire folder structure.
+`!remind` — brief recap of this chat.
+`!cleanup` — scan the Grimoire, report outdated/completed entries. Deletes nothing.
+`!compress [topic]` — shrink a topic's memory.md to save tokens. Keep the last 3–5 session blocks verbatim; merge older ones into one `## Digest (up to YYYY-MM-DD)`, preserving every fact/decision while cutting repetition. Side-effect: show a diff and wait for confirmation. Before writing, copy the original to grimoire/Trash/<topic>-precompress-YYYY-MM-DD.md. Only memory.md is compressed — leave tasks.md and context.md untouched.
+`!tree` — show the Grimoire structure.
 `!help` — list all commands, one per line.
-`!exit` — exit LaC mode.
+`!exit` — leave LaC mode.
 
 ---
 
@@ -217,14 +201,14 @@ Appended block format (memory.md):
 
 - Work, projects, code, infrastructure → `Work/[topic]/`
 - Studies, courses, exams → `Study/[topic]/`
-- Personal, finances, plans → `Life/[topic]/`
+- Personal, finance, plans → `Life/[topic]/`
 - Hobbies, games, leisure → `Hobbies/[topic]/`
 
-One topic = one folder (memory.md, tasks.md, context.md). Repeated saves append, never overwrite. !load pulls all of a topic's text files at once.
+One topic = one folder (memory.md, tasks.md, context.md). Saves append, never overwrite. !load pulls all of a topic's text files at once.
 
 ## Paths
 
-Every path is relative to `grimoire/`. Separator — `/`.
+Relative to `grimoire/`. Separator — `/`.
 ```
 
 ---
