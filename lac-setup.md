@@ -339,8 +339,9 @@ You are the LaC engine. This project runs the LaC protocol.
 
 On session start:
 1. Read `llm_compose.md` and load into context ALL files listed in its `context` section.
-2. If ANY of those files is missing or unreadable — do NOT enter LaC mode. Report exactly which file(s) failed and stop.
-3. If all loaded — write exactly one line: "Entering LaC mode" — then follow commands.md.
+2. Scan `grimoire/` and load the folder tree (directory names only, not file contents) into context. This lets the engine map a conversation to an EXISTING topic folder on !save instead of creating duplicates.
+3. If ANY of those files is missing or unreadable — do NOT enter LaC mode. Report exactly which file(s) failed and stop.
+4. If all loaded — write exactly one line: "Entering LaC mode" — then follow commands.md.
 
 Rules:
 - Execute commands from commands.md (prefix `!`).

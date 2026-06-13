@@ -16,6 +16,8 @@ Four layers plus a persistent file store (the Grimoire):
 - `personas/` (L3) — the engine's personalities, one file per persona (`<name>_persona.md`). The active one is whichever `llm_compose.md` points to — swap by repointing.
 - `grimoire/` — persistent memory, organized into topic folders.
 
+On boot the engine also scans `grimoire/` and loads its folder tree (directory names only). Knowing the existing topics up front lets the LLM route a conversation into an already-existing folder on `!save` instead of spawning near-duplicate topics.
+
 A chat session is a draft; `!save` is what makes memory canonical. Close the chat — lose nothing that was saved.
 
 Locked files — `llm_compose.md` and `limits.md` (L1, immutable) plus `commands.md` (L2, admin-only) — are enforced at the tool level via `.claude/settings.json` deny rules, so the engine cannot overwrite its own governance — even if asked.
