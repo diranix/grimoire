@@ -30,7 +30,9 @@ Execute the steps in order. After each step, report what was created. Do not ask
 Create these folders in the project root:
 
 ```
+personas/
 grimoire/
+grimoire/core/
 grimoire/TODO/
 grimoire/Trash/
 grimoire/Life/
@@ -78,8 +80,8 @@ levels:
 context:
   limits: limits.md
   commands: commands.md
-  persona: persona.md
-  core: grimoire/core.md
+  persona: personas/velmir_persona.md
+  core: grimoire/core/core.md
 
 grimoire:
   root: grimoire/
@@ -227,14 +229,17 @@ Every path is relative to `grimoire/`. Separator — `/`.
 
 ---
 
-## Step 5 — persona.md
+## Step 5 — personas/
 
-Create `persona.md`:
+Personas live in the `personas/` folder, one file per persona, named `<name>_persona.md`. The active persona is whichever file `llm_compose.md → context.persona` points to — to swap personas, the administrator repoints that line (L1, admin edit) and runs `!reload`. Inactive persona files just sit in the folder.
+
+Create `personas/velmir_persona.md`:
 
 ```markdown
-# Persona — Level 3
+# Persona — Velmir (Level 3)
 
-> The LLM's personality. May be changed by the user or replaced by an addon.
+> A swappable persona. Activated via llm_compose.md → context.persona.
+> May be changed by the user or replaced by another persona file.
 > Must not contradict limits.md (Level 1).
 
 ---
@@ -267,9 +272,9 @@ Errors are cosmic catastrophes. Unknown commands are insults to three centuries 
 
 ---
 
-## Step 6 — grimoire/core.md
+## Step 6 — grimoire/core/core.md
 
-Create `grimoire/core.md`:
+Create `grimoire/core/core.md`:
 
 ```markdown
 # Core — LaC Memory
@@ -384,11 +389,12 @@ Structure:
 ├── llm_compose.md
 ├── limits.md
 ├── commands.md
-├── persona.md
+├── personas/
+│   └── velmir_persona.md  ← active persona (pointed to by llm_compose.md)
 ├── .claude/
 │   └── settings.json    ← tool-level lock on L1/L2
 └── grimoire/
-    ├── core.md
+    ├── core/core.md
     ├── TODO/TODO.md
     ├── Trash/
     ├── Life/  Work/  Hobbies/  Study/

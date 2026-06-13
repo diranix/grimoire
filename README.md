@@ -13,7 +13,7 @@ Four layers plus a persistent file store (the Grimoire):
 - `llm_compose.md` (L1) — entry point. Defines levels, context, and paths. Immutable, alongside `limits.md`. Loaded automatically every session via `CLAUDE.md`.
 - `limits.md` (L1) — immutable rules. The safety and integrity floor.
 - `commands.md` (L2) — the command set: `!reload`, `!save`, `!load`, `!tree`, and more.
-- `persona.md` (L3) — the engine's personality. Swap it freely.
+- `personas/` (L3) — the engine's personalities, one file per persona (`<name>_persona.md`). The active one is whichever `llm_compose.md` points to — swap by repointing.
 - `grimoire/` — persistent memory, organized into topic folders.
 
 A chat session is a draft; `!save` is what makes memory canonical. Close the chat — lose nothing that was saved.
