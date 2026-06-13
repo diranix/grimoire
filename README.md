@@ -10,7 +10,7 @@ A file-based protocol for driving an LLM through structured Markdown. Your rules
 
 Four layers plus a persistent file store (the Grimoire):
 
-- `llm_compose.md` — entry point. Defines levels, context, and paths. Loaded automatically every session via `CLAUDE.md`.
+- `llm_compose.md` (L1) — entry point. Defines levels, context, and paths. Immutable, alongside `limits.md`. Loaded automatically every session via `CLAUDE.md`.
 - `limits.md` (L1) — immutable rules. The safety and integrity floor.
 - `commands.md` (L2) — the command set: `!reload`, `!save`, `!load`, `!tree`, and more.
 - `persona.md` (L3) — the engine's personality. Swap it freely.
@@ -18,7 +18,7 @@ Four layers plus a persistent file store (the Grimoire):
 
 A chat session is a draft; `!save` is what makes memory canonical. Close the chat — lose nothing that was saved.
 
-Immutable files (`llm_compose.md`, `limits.md`, `commands.md`) are locked at the tool level via `.claude/settings.json` deny rules, so the engine cannot overwrite its own governance — even if asked.
+Locked files — `llm_compose.md` and `limits.md` (L1, immutable) plus `commands.md` (L2, admin-only) — are enforced at the tool level via `.claude/settings.json` deny rules, so the engine cannot overwrite its own governance — even if asked.
 
 ## Requirements
 
