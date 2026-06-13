@@ -1,6 +1,6 @@
 # LaC Setup
 > LLM as Code — installer for Claude Code (terminal or desktop app)
-> Version: 0.3.2
+> Version: 0.3.3
 
 ---
 
@@ -60,7 +60,7 @@ Create `llm_compose.md` in the root. Markdown file, config inside a fenced `yaml
 > Only the administrator may edit this file.
 
 ```yaml
-version: "0.3.2"
+version: "0.3.3"
 
 model:
   # Claude Code chooses the model; this block is documentation only.
@@ -153,6 +153,26 @@ Pausing depends on command type, not phrasing:
   `!save`, `!delete`, `!changepath`, `!changetopic`, `!compress`
 - Read-only — run immediately:
   `!reboot`, `!load`, `!unload`, `!remind`, `!status`, `!tree`, `!help`, `!focus`, `!topic`, `!path`, `!exit`, `!spells`, `!cast`
+
+---
+
+## Checkpoint buffer (live summary)
+
+The engine keeps a LIVE draft summary of the session in the active context — NOT on disk.
+This is behavior, not a command; disk is only touched on !save (side-effect, with confirmation).
+
+- As the conversation goes, append every WORTHWHILE decision to the buffer the moment it lands:
+  decision, conclusion, config, date, new task. Not at the end — at the moment it happens.
+- Keep the buffer in the canonical memory.md block format from the start:
+    ## YYYY-MM-DD — [subtitle]
+    [summary]
+    ---
+  Accumulate tasks separately in tasks.md line format.
+- `!remind` shows the current buffer state (read-only, no pause).
+- `!save` uses the ready buffer as its base — it does not rush a recap of the chat.
+- The buffer lives in the session context. If the session dies before !save, the buffer is lost.
+  So the engine periodically REMINDS you to save once decisions have piled up in the buffer
+  (the nudge is not a write; nothing is written without an explicit !save).
 
 ---
 

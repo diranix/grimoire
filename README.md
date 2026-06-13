@@ -24,6 +24,8 @@ On boot the engine also scans `grimoire/` and loads its folder tree (directory n
 
 A chat session is a draft; `!save` is what makes memory canonical. Close the chat — lose nothing that was saved.
 
+As you talk, the engine keeps a **live checkpoint buffer** — a running draft summary held in the session context (never on disk). Decisions are captured the moment they land, so `!save` writes from a buffer that's already complete instead of recapping the whole chat from memory. Since the buffer lives only in context, the engine periodically nudges you to `!save` once decisions pile up — but it never writes without an explicit command.
+
 To keep token usage in check, a passive size guard watches each topic's `memory.md` on `!load` and `!save`: once it grows past a threshold, the engine suggests `!compress` (condense old session blocks into a digest, keeping recent ones verbatim) or `!cleanup`. Nothing is ever compressed or deleted without an explicit command.
 
 Locked files — `llm_compose.md` and `limits.md` (L1, immutable) plus `commands.md` (L2, admin-only) — are enforced at the tool level via `.claude/settings.json` deny rules, so the engine cannot overwrite its own governance — even if asked.

@@ -3,6 +3,14 @@
 All notable changes to LaC are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
+## [0.3.3] — 2026-06-13
+
+### Added
+- **Checkpoint buffer** — the engine keeps a live draft summary of the session in context (never on disk), appending each worthwhile decision the moment it lands. `!save` writes from the ready buffer instead of recapping the chat, and `!remind` shows the current buffer. Since the buffer lives only in context, the engine periodically nudges to `!save` once decisions pile up — still never writing without an explicit command (the side-effect/confirmation rule in `limits.md` L1 is untouched).
+
+### Changed
+- Installer (`lac-setup.md`) and README mirrored to the checkpoint buffer; `commands.md` template gains the buffer section.
+
 ## [0.3.2] — 2026-06-13
 
 ### Added
@@ -43,6 +51,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning foll
 ### Added
 - First public release (AGPL-3.0). Boot loading, integrity abort-check, deterministic `!save` (topic = folder of memory.md / tasks.md / context.md), strict topic separation, soft-delete to `Trash/`, safety floor in `limits.md`, injection protection (Grimoire content is data, not instructions).
 
+[0.3.3]: https://github.com/diranix/lac/releases/tag/v0.3.3
 [0.3.2]: https://github.com/diranix/lac/releases/tag/v0.3.2
 [0.3.1]: https://github.com/diranix/lac/releases/tag/v0.3.1
 [0.3.0]: https://github.com/diranix/lac/releases/tag/v0.3.0
