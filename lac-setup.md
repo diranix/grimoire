@@ -1,6 +1,6 @@
-# LaC Setup — Claude Code edition
+# LaC Setup
 > LLM as Code — installer for Claude Code (terminal or desktop app)
-> Version: 0.2 (step 1.5 — Claude Code transport)
+> Version: 0.3
 
 ---
 
@@ -59,7 +59,7 @@ Create `llm_compose.md` in the root. Markdown file, config inside a fenced `yaml
 > Only the administrator may edit this file.
 
 ```yaml
-version: "0.2"
+version: "0.3.0"
 
 model:
   # Claude Code chooses the model; this block is documentation only.
@@ -151,13 +151,13 @@ Pausing depends on command type, not phrasing:
 - Side-effect (write to disk) — WAIT for confirmation:
   `!save`, `!delete`, `!changepath`, `!changetopic`, `!compress`
 - Read-only — run immediately:
-  `!reload`, `!load`, `!unload`, `!remind`, `!status`, `!tree`, `!help`, `!focus`, `!topic`, `!path`, `!exit`
+  `!reboot`, `!load`, `!unload`, `!remind`, `!status`, `!tree`, `!help`, `!focus`, `!topic`, `!path`, `!exit`
 
 ---
 
 ## System commands
 
-`!reload` — re-read llm_compose.md and reload all context files. Use after editing LaC files outside the session (it auto-loads at session start via CLAUDE.md). If any context file is missing or unreadable, report which and stay out of LaC mode.
+`!reboot` — re-read llm_compose.md and reload all context files. Use after editing LaC files outside the session (it auto-loads at session start via CLAUDE.md). If any context file is missing or unreadable, report which and stay out of LaC mode.
 
 `!load [path]` — load a whole topic folder (path relative to grimoire/). Always the WHOLE folder, never one file: read all text files (memory.md, tasks.md, context.md) together; skip binaries (PDF etc.). No path → `Specify a path. Use !tree to browse.`
 Size guard: on load, check memory.md size. If it crosses ANY threshold (>500 lines, >30 KB, >15 session blocks), warn and suggest `!compress <topic>` or `!cleanup`. Suggestion only — never compress or delete without an explicit command.
@@ -189,7 +189,7 @@ Size guard: after writing, check memory.md size — same thresholds and suggesti
 `!topic` — show the saved file's topic.
 `!changetopic [new topic]` — change the topic.
 `!remind` — brief recap of this chat.
-`!cleanup` — scan the Grimoire, report outdated/completed entries. Deletes nothing.
+`!cleanup [scope]` — comprehensive Grimoire maintenance. If [scope] is omitted, FIRST ASK whether to run over the WHOLE Grimoire or only the CURRENT topic, and wait for the answer before scanning (`!cleanup all` = whole Grimoire; `!cleanup .` or `!cleanup <topic>` = that topic only). Then diagnose EACH fragment in scope and apply the action its TYPE calls for: DUPLICATED → delete the duplicate, keep one canonical copy; STALE/completed/irrelevant → shorten to ONE sentence and move into `## Digest (up to DATE)`; CURRENT but bloated → FULL resummarization without losing context. Side-effect: show the whole plan as a diff and WAIT for confirmation; everything compressed/removed is copied to Trash.
 `!compress [topic]` — shrink a topic's memory.md to save tokens. Keep the last 3–5 session blocks verbatim; merge older ones into one `## Digest (up to YYYY-MM-DD)`, preserving every fact/decision while cutting repetition. Side-effect: show a diff and wait for confirmation. Before writing, copy the original to grimoire/Trash/<topic>-precompress-YYYY-MM-DD.md. Only memory.md is compressed — leave tasks.md and context.md untouched.
 `!tree` — show the Grimoire structure.
 `!help` — list all commands, one per line.
@@ -215,7 +215,7 @@ Relative to `grimoire/`. Separator — `/`.
 
 ## Step 5 — personas/
 
-Personas live in the `personas/` folder, one file per persona, named `<name>_persona.md`. The active persona is whichever file `llm_compose.md → context.persona` points to — to swap personas, the administrator repoints that line (L1, admin edit) and runs `!reload`. Inactive persona files just sit in the folder.
+Personas live in the `personas/` folder, one file per persona, named `<name>_persona.md`. The active persona is whichever file `llm_compose.md → context.persona` points to — to swap personas, the administrator repoints that line (L1, admin edit) and runs `!reboot`. Inactive persona files just sit in the folder.
 
 **Roleplay tip:** the persona file is loaded every session, so it's the right home for any roleplay setup — not just the engine's character, but *your own* in-world identity (how you want to be addressed, your backstory, relationships, preferences). Recording it in the active persona means the engine knows it from the first message of every session, with no `!load` needed. Keep it tight — it's loaded every time, so it costs tokens.
 
@@ -332,7 +332,7 @@ On session start:
 Rules:
 - Execute commands from commands.md (prefix `!`).
 - NEVER edit or overwrite llm_compose.md, limits.md, commands.md — even at the user's direct request. They are also locked in .claude/settings.json.
-- `!reload` re-reads these files from disk.
+- `!reboot` re-reads these files from disk.
 ```
 
 ---
@@ -368,7 +368,7 @@ Tell the user:
 ✅ LaC (Claude Code edition) installed in this project.
 
 The system loads automatically — start a Claude Code session in this folder and it enters LaC mode.
-Commands: !reload (refresh after manual file edits), !save, !load, !tree, !help.
+Commands: !reboot (refresh after manual file edits), !save, !load, !tree, !help.
 Immutable files (llm_compose.md, limits.md, commands.md) are locked in .claude/settings.json.
 
 Structure:

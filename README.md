@@ -15,7 +15,7 @@ Four layers plus a persistent file store (the Grimoire):
 
 - `llm_compose.md` (L1) — entry point. Defines levels, context, and paths. Immutable, alongside `limits.md`. Loaded automatically every session via `CLAUDE.md`.
 - `limits.md` (L1) — immutable rules. The safety and integrity floor.
-- `commands.md` (L2) — the command set: `!reload`, `!save`, `!load`, `!tree`, `!compress`, and more.
+- `commands.md` (L2) — the command set: `!reboot`, `!save`, `!load`, `!tree`, `!compress`, and more.
 - `personas/` (L3) — the engine's personalities, one file per persona (`<name>_persona.md`). The active one is whichever `llm_compose.md` points to — swap by repointing. Since the active persona loads every session, it's also where you record *your own* in-world identity for roleplay (how you're addressed, backstory, relationships) — the engine then knows it from the first message, no `!load` needed.
 - `grimoire/` — persistent memory, organized into topic folders.
 
@@ -38,7 +38,7 @@ That's it. No Docker, no MCP filesystem server, no client memory hook.
 
 Hand `lac-setup.md` to Claude Code in your LaC folder and tell it to execute the file. It builds the structure, writes `CLAUDE.md` (the auto-boot file), and locks the immutable layer. Full steps live inside `lac-setup.md`.
 
-After install, just start a Claude Code session in that folder — it enters LaC mode on its own. Use `!reload` to refresh after editing LaC files outside the session.
+After install, just start a Claude Code session in that folder — it enters LaC mode on its own. Use `!reboot` to refresh after editing LaC files outside the session.
 
 ## License
 
