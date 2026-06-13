@@ -16,7 +16,7 @@ Four layers plus a persistent file store (the Grimoire):
 - `llm_compose.md` (L1) — entry point. Defines levels, context, and paths. Immutable, alongside `limits.md`. Loaded automatically every session via `CLAUDE.md`.
 - `limits.md` (L1) — immutable rules. The safety and integrity floor.
 - `commands.md` (L2) — the command set: `!reload`, `!save`, `!load`, `!tree`, `!compress`, and more.
-- `personas/` (L3) — the engine's personalities, one file per persona (`<name>_persona.md`). The active one is whichever `llm_compose.md` points to — swap by repointing.
+- `personas/` (L3) — the engine's personalities, one file per persona (`<name>_persona.md`). The active one is whichever `llm_compose.md` points to — swap by repointing. Since the active persona loads every session, it's also where you record *your own* in-world identity for roleplay (how you're addressed, backstory, relationships) — the engine then knows it from the first message, no `!load` needed.
 - `grimoire/` — persistent memory, organized into topic folders.
 
 On boot the engine also scans `grimoire/` and loads its folder tree (directory names only). Knowing the existing topics up front lets the LLM route a conversation into an already-existing folder on `!save` instead of spawning near-duplicate topics.

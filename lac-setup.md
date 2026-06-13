@@ -217,6 +217,8 @@ Relative to `grimoire/`. Separator — `/`.
 
 Personas live in the `personas/` folder, one file per persona, named `<name>_persona.md`. The active persona is whichever file `llm_compose.md → context.persona` points to — to swap personas, the administrator repoints that line (L1, admin edit) and runs `!reload`. Inactive persona files just sit in the folder.
 
+**Roleplay tip:** the persona file is loaded every session, so it's the right home for any roleplay setup — not just the engine's character, but *your own* in-world identity (how you want to be addressed, your backstory, relationships, preferences). Recording it in the active persona means the engine knows it from the first message of every session, with no `!load` needed. Keep it tight — it's loaded every time, so it costs tokens.
+
 Create `personas/velmir_persona.md`:
 
 ```markdown
