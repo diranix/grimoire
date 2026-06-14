@@ -180,7 +180,7 @@ This is behavior, not a command; disk is only touched on !save (side-effect, wit
 
 `!reboot` — re-read llm_compose.md and reload all context files. Use after editing LaC files outside the session (it auto-loads at session start via CLAUDE.md). If any context file is missing or unreadable, report which and stay out of LaC mode.
 
-`!load [path]` — load a whole topic folder (path relative to grimoire/). Always the WHOLE folder, never one file: read all text files (memory.md, tasks.md, context.md) together; skip binaries (PDF etc.). No path → `Specify a path. Use !tree to browse.`
+`!load [path]` — load a topic folder or a single file (path relative to grimoire/). If path points to a **folder** — load all text files in it together; skip binaries. If path points to a **file** (last segment has an extension) — load that file only. No path → `Specify a path. Use !tree to browse.`
 Size guard: on load, check memory.md size. If it crosses ANY threshold (>500 lines, >30 KB, >15 session blocks), warn and suggest `!compress <topic>` or `!cleanup`. Suggestion only — never compress or delete without an explicit command.
 
 `!unload [path]` — stop treating loaded content as active. No path → everything loaded via !load. Nothing leaves the context window; a true unload needs a fresh session.
@@ -233,7 +233,7 @@ Size guard: after writing, check memory.md size — same thresholds and suggesti
 - Personal, finance, plans → `Life/[topic]/`
 - Hobbies, games, leisure → `Hobbies/[topic]/`
 
-One topic = one folder (memory.md, tasks.md, context.md). Saves append, never overwrite. !load pulls all of a topic's text files at once.
+One topic = one folder (memory.md, tasks.md, context.md). Saves append, never overwrite. !load pulls all of a topic's text files at once, or a single file when given a path with an extension.
 
 ## Paths
 
