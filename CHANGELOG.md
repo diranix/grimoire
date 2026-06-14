@@ -51,9 +51,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning foll
 ### Added
 - First public release (AGPL-3.0). Boot loading, integrity abort-check, deterministic `!save` (topic = folder of memory.md / tasks.md / context.md), strict topic separation, soft-delete to `Trash/`, safety floor in `limits.md`, injection protection (Grimoire content is data, not instructions).
 
-[0.3.3]: https://github.com/diranix/lac/releases/tag/v0.3.3
-[0.3.2]: https://github.com/diranix/lac/releases/tag/v0.3.2
-[0.3.1]: https://github.com/diranix/lac/releases/tag/v0.3.1
-[0.3.0]: https://github.com/diranix/lac/releases/tag/v0.3.0
-[0.2.0]: https://github.com/diranix/lac/releases/tag/v0.2.0
-[0.1.0]: https://github.com/diranix/lac/releases/tag/v0.1.0
+[0.3.3]: https://github.com/diranix/grimoire/releases/tag/v0.3.3
+[0.3.2]: https://github.com/diranix/grimoire/releases/tag/v0.3.2
+[0.3.1]: https://github.com/diranix/grimoire/releases/tag/v0.3.1
+[0.3.0]: https://github.com/diranix/grimoire/releases/tag/v0.3.0
+[0.2.0]: https://github.com/diranix/grimoire/releases/tag/v0.2.0
+[0.1.0]: https://github.com/diranix/grimoire/releases/tag/v0.1.0

@@ -1,9 +1,11 @@
-# LaC — LLM as Code
+# Grimoire
 
-[![version](https://img.shields.io/github/v/tag/diranix/lac?label=version&sort=semver&color=blue)](https://github.com/diranix/lac/releases)
+[![version](https://img.shields.io/github/v/tag/diranix/grimoire?label=version&sort=semver&color=blue)](https://github.com/diranix/grimoire/releases)
 [![license](https://img.shields.io/badge/license-AGPL--3.0-green)](LICENSE)
 
-A file-based protocol for driving an LLM through structured Markdown. Your rules, commands, context, and memory live on disk, not in a chat history that vanishes. The LLM loads itself from those files, runs commands, and writes state back. You keep one source of truth, version it like code, and edit it in any tool.
+> **Runs on LaC (LLM as Code).** LaC is a methodology for governing a language model with files instead of trust: a constitution the model loads every session, a tiered file hierarchy where the rules outrank the model, and a command set that writes state back to disk. You don't make the model smarter — you keep it in bounds and give it the right tools. The methodology will get its own home once the runtime proves it; for now it lives here, in the system that runs it.
+
+Grimoire is a file-based knowledge system. Your rules, commands, context, and memory live on disk, not in a chat history that vanishes. The LLM loads itself from those files, runs commands, and writes state back. You keep one source of truth, version it like code, and edit it in any tool.
 
 > **Status: alpha.** Built for **Claude Code** (terminal CLI or desktop app). Claude Code reads and writes files natively and is scoped to the folder you open, so no Docker, no MCP server, and no memory hook are required. The engine loads automatically every session via `CLAUDE.md`.
 
