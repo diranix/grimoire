@@ -394,7 +394,7 @@ Note for the administrator: deny rules are strong but have had reliability bugs 
 Tell the user:
 
 ```
-✅ LaC (Claude Code edition) installed in this project.
+✅ LaC installed in this project.
 
 The system loads automatically — start a Claude Code session in this folder and it enters LaC mode.
 Commands: !reboot (refresh after manual file edits), !save, !load, !tree, !help.

@@ -43,7 +43,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning foll
 ## [0.2.0] — 2026-06-12
 
 ### Changed
-- **Claude Code edition** — migrated transport from Claude Desktop + Filesystem MCP + memory hook to native Claude Code. The engine now auto-loads every session via `CLAUDE.md` (no `!boot`, no MCP server, no client hook).
+- **Native Claude Code transport** — migrated from Claude Desktop + Filesystem MCP + memory hook to native Claude Code. The engine now auto-loads every session via `CLAUDE.md` (no `!boot`, no MCP server, no client hook).
 - Tool-level lock on L1/L2 files via `.claude/settings.json` deny rules.
 
 ## [0.1.0] — 2026-06-12
