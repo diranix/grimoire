@@ -3,6 +3,18 @@
 All notable changes to LaC are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
+## [0.3.4] — 2026-06-15
+
+### Added
+- **Nested subtopics** — a topic folder may now hold subtopic folders, each containing only its own `memory.md`. `!load topic` loads just the topic root and lists its subtopics; `!load topic/sub` loads the shared root plus that subtopic; `!load topic/all` loads every `memory.md` recursively. Work on one facet (e.g. mechanics) without pulling the rest (e.g. lore).
+
+### Changed
+- `tasks.md` is now **shared at the topic root** (never per-subtopic); the old `context.md` file becomes a `context/` **folder** of reference material. Neither `tasks.md`, `context/`, nor subtopics are pre-built — they appear only when there is real content for them.
+- `!save` now **proposes** where a summary belongs (topic root or a subtopic) and asks the user to confirm or redirect.
+- `!load` no longer has a single-file mode — folders are topics, so loading a topic loads its `memory.md`.
+- `!cleanup` redesigned to be **structural and non-lossy** (redistribute into subtopics, dedupe, prune completed tasks); all condensing/summarizing moved to `!compress`, its lossy counterpart. Reorganizing folders never costs a note.
+- Installer (`lac-setup.md`) and README mirrored to all of the above.
+
 ## [0.3.3] — 2026-06-13
 
 ### Added
@@ -51,6 +63,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning foll
 ### Added
 - First public release (AGPL-3.0). Boot loading, integrity abort-check, deterministic `!save` (topic = folder of memory.md / tasks.md / context.md), strict topic separation, soft-delete to `Trash/`, safety floor in `limits.md`, injection protection (Grimoire content is data, not instructions).
 
+[0.3.4]: https://github.com/diranix/grimoire/releases/tag/v0.3.4
 [0.3.3]: https://github.com/diranix/grimoire/releases/tag/v0.3.3
 [0.3.2]: https://github.com/diranix/grimoire/releases/tag/v0.3.2
 [0.3.1]: https://github.com/diranix/grimoire/releases/tag/v0.3.1
