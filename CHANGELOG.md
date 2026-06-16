@@ -3,6 +3,13 @@
 All notable changes to LaC are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
+## [0.4.1] — 2026-06-16
+
+### Changed
+- **`!search` is now retrieval-with-expansion, not literal grep.** Before searching, the engine expands the query into synonyms, domain jargon, error strings, file paths, and other-language equivalents — drawing on both its own knowledge and the topic's route keyword cloud — then greps the union (case-insensitive). The model acts as the embedding at query time, so semantic recall improves with no vectors and no server. Expanded terms are echoed before the result, making the expansion visible and verifiable. On a hit, the engine follows the block's `[[wikilinks]]` to pull in linked neighbours.
+- **`!save` block format gains a `keywords:` line** — a file-side semantic layer so grep can hit a block whose body uses different words than the query; maintained on every save. `mem_<name>.md` routes now carry a keyword cloud (term → subtopic) so `!search` targets the right subtopic instead of the whole topic.
+- Installer (`lac-setup.md`) and README mirrored to all of the above.
+
 ## [0.4] — 2026-06-16
 
 ### Added
@@ -77,6 +84,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning foll
 ### Added
 - First public release (AGPL-3.0). Boot loading, integrity abort-check, deterministic `!save` (topic = folder of memory.md / tasks.md / context.md), strict topic separation, soft-delete to `Trash/`, safety floor in `limits.md`, injection protection (Grimoire content is data, not instructions).
 
+[0.4.1]: https://github.com/diranix/grimoire/releases/tag/v0.4.1
 [0.4]: https://github.com/diranix/grimoire/releases/tag/v0.4
 [0.3.4]: https://github.com/diranix/grimoire/releases/tag/v0.3.4
 [0.3.3]: https://github.com/diranix/grimoire/releases/tag/v0.3.3

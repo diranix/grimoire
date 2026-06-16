@@ -1,6 +1,6 @@
 # LaC Setup
 > LLM as Code — installer for Claude Code (terminal or desktop app)
-> Version: 0.4
+> Version: 0.4.1
 
 ---
 
@@ -60,7 +60,7 @@ Create `llm_compose.md` in the root. Markdown file, config inside a fenced `yaml
 > Only the administrator may edit this file.
 
 ```yaml
-version: "0.4"
+version: "0.4.1"
 
 model:
   # Claude Code chooses the model; this block is documentation only.
@@ -190,6 +190,9 @@ This is behavior, not a command; disk is only touched on !save (side-effect, wit
 `!search [query]` — read-only retrieval across the loaded topic. Runs IMMEDIATELY, never asks (read-only). Greps the topic's subtopic memory files and their context dumps for the query, reads ONLY the matching excerpts (line ranges), works from those. The engine invokes !search AUTOMATICALLY whenever a question needs material from a subtopic that is not fully loaded — it does not wait for the user to type it.
 - Citations [file, lines] are OPTIONAL: give them when pulling from context dumps (PDF/docx/etc.), when the user is studying, or on request. In ordinary conversation over already-loaded subtopic memory, answer naturally — no citation noise.
 - No query → operates on the current user question.
+- Query expansion (MANDATORY): never grep the user's literal words. First expand the query into synonyms, domain jargon, error strings, file paths, and other-language equivalents — using both the model's own knowledge and the topic's route keyword cloud — then grep the UNION (ripgrep alternation, case-insensitive: `rg -i "term1|term2|..."`). The model is the embedding, applied at query time; no vectors, no server.
+- Echo the expanded terms BEFORE the result (e.g. `searching: e1000e | TX hang | ethtool | offload`) so expansion is visible and verifiable, not an invisible promise.
+- On a hit, follow the block's [[wikilinks]] and pull in linked neighbours (associative expansion).
 
 `!save [topic] [path]` — save the current chat into the topic folder.
 Path resolution (no [path]): 1) pick the top folder by context (Work/Study/Life/Hobbies); 2) normalize the topic (lowercase, spaces→hyphens, strip special chars); 3) folder = [Top]/[topic]/.
@@ -218,8 +221,11 @@ Write behavior:
 Multiple topics — STRICT separation (never mix): one self-contained summary per topic in its own folder; report what went where; ask only when a topic→folder mapping is genuinely unclear.
 Block format (memory files):
   ## YYYY-MM-DD — [subtitle]
-  [summary]
+  keywords: <synonyms, jargon, error strings, paths, other-language terms a future !search might use>
+  [summary; link related blocks via [[mem_<sub>_<name>]]]
   ---
+- The keywords line is the file-side semantic layer: it lets grep hit a block whose body uses different words than the query. Maintain it on EVERY !save (one line on a block you're already writing).
+- In mem_<name>.md each route carries a keyword cloud (term → which subtopic) so !search greps the right subtopic, not the whole topic.
 Then output: Saved / Topic / Files written / "To change path: !changepath" / "To change topic: !changetopic".
 Size guard: after writing, check the memory file size — warn >500 lines / >30 KB / >15 blocks; suggest !compress or !cleanup (suggestion only).
 
