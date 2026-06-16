@@ -3,6 +3,20 @@
 All notable changes to LaC are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
+## [0.4] — 2026-06-16
+
+### Added
+- **`!search`** — read-only retrieval command. The engine greps subtopic memory files and their context dumps for a query, reads only the matching excerpts, and answers from those. Invoked automatically whenever a question needs material from a subtopic that isn't fully loaded. Citations are optional — given for context dumps and study, omitted in ordinary conversation.
+
+### Changed
+- **Retrieval-first memory model.** `!load topic` now loads ONLY the topic-root memory file plus subtopic NAMES, then answers in search mode (auto `!search`) instead of swallowing the whole topic — fixing context bloat on large topics. `!load topic/sub` is the working mode that loads one subtopic fully into head. Big context dumps are never swallowed; they stay grep-only.
+- **Naming convention.** Topic-root memory file is now `mem_<name>.md`; each subtopic's is `mem_<sub>_<name>.md` (was `memory.md` everywhere). `mem_<name>.md` doubles as a routing index (where each thing lives) plus a light always-in-head summary.
+- **Context relocated to subtopics.** There is no root-level `context/` anymore; every context dump (PDF/docx/images/text) lives inside the subtopic it belongs to, next to that subtopic's memory file, and is READ-ONLY — the engine reads and cites it, never edits it.
+- Installer (`lac-setup.md`) and README mirrored to all of the above.
+
+### Removed
+- **`!unload`** — removed everywhere. It never truly freed context (a real unload needs a fresh session), so it was misleading.
+
 ## [0.3.4] — 2026-06-15
 
 ### Added
@@ -63,6 +77,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning foll
 ### Added
 - First public release (AGPL-3.0). Boot loading, integrity abort-check, deterministic `!save` (topic = folder of memory.md / tasks.md / context.md), strict topic separation, soft-delete to `Trash/`, safety floor in `limits.md`, injection protection (Grimoire content is data, not instructions).
 
+[0.4]: https://github.com/diranix/grimoire/releases/tag/v0.4
 [0.3.4]: https://github.com/diranix/grimoire/releases/tag/v0.3.4
 [0.3.3]: https://github.com/diranix/grimoire/releases/tag/v0.3.3
 [0.3.2]: https://github.com/diranix/grimoire/releases/tag/v0.3.2

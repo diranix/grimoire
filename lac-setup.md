@@ -1,6 +1,6 @@
 # LaC Setup
 > LLM as Code — installer for Claude Code (terminal or desktop app)
-> Version: 0.3.4
+> Version: 0.4
 
 ---
 
@@ -43,7 +43,7 @@ grimoire/Study/
 .claude/
 ```
 
-Topic subfolders inside `Life/`, `Work/`, `Hobbies/`, `Study/` are created later, on the first `!save` for a topic. Subtopics, `tasks.md` and `context/` are NOT pre-built — they appear only when there is real content for them.
+Topic subfolders inside `Life/`, `Work/`, `Hobbies/`, `Study/` are created later, on the first `!save` for a topic. Subtopics and `tasks.md` are NOT pre-built — they appear only when there is real content. There is no root-level `context/`; context dumps (PDF/docx/images/text) live inside the subtopic they belong to.
 
 ---
 
@@ -60,7 +60,7 @@ Create `llm_compose.md` in the root. Markdown file, config inside a fenced `yaml
 > Only the administrator may edit this file.
 
 ```yaml
-version: "0.3.4"
+version: "0.4"
 
 model:
   # Claude Code chooses the model; this block is documentation only.
@@ -152,7 +152,7 @@ Pausing depends on command type, not phrasing:
 - Side-effect (write to disk) — WAIT for confirmation:
   `!save`, `!delete`, `!changepath`, `!changetopic`, `!compress`, `!cleanup`
 - Read-only — run immediately:
-  `!reboot`, `!load`, `!unload`, `!remind`, `!status`, `!tree`, `!help`, `!focus`, `!topic`, `!path`, `!exit`, `!spells`, `!cast`
+  `!reboot`, `!load`, `!search`, `!remind`, `!status`, `!tree`, `!help`, `!focus`, `!topic`, `!path`, `!exit`, `!spells`, `!cast`
 
 ---
 
@@ -180,38 +180,48 @@ This is behavior, not a command; disk is only touched on !save (side-effect, wit
 
 `!reboot` — re-read llm_compose.md and reload all context files. Use after editing LaC files outside the session (it auto-loads at session start via CLAUDE.md). If any context file is missing or unreadable, report which and stay out of LaC mode.
 
-`!load [path]` — load a topic or a subtopic (path relative to grimoire/). Folders ARE topics, so loading a topic means loading its memory.md — `!load forest` and `!load forest/memory.md` are the same thing.
-- Path is a TOPIC → load its memory.md, then list the subtopic folders it contains and ask which to load, if any. NEVER pull subtopics automatically.
-- Path is `topic/all` → load the topic's memory.md AND every subtopic's memory.md recursively.
-- Path is a SUBTOPIC (`topic/sub`) → load the topic-root memory.md (shared base knowledge) PLUS that subtopic's memory.md. Without the root the picture is incomplete.
+`!load [path]` — load a topic for reading/working (read-only, runs immediately).
+- Path is a TOPIC → load ONLY its mem_<name>.md into context, then list the subtopic folder NAMES (names only). Do NOT load any subtopic into the head. mem_<name>.md is a ROUTING INDEX (where each thing lives → which subtopic) PLUS a light full-topic summary kept in head at all times. Questions here are answered in SEARCH mode: read the route, then run !search automatically over the relevant subtopic(s). Never swallow a whole topic.
+- Path is a SUBTOPIC (`topic/sub`) → WORKING mode: load the topic-root mem_<name>.md fully AND that subtopic's mem_<sub>_<name>.md fully into the head, so you can co-author / discuss it freely. Its context dumps (PDF/docx/images) are NOT swallowed — they stay grep-only via !search.
+- Path is `topic/all` → force full load of every mem_*.md recursively (small topics only, on purpose).
 - No path → `Specify a path. Use !tree to browse.`
-tasks.md and context/ are not auto-loaded: for tasks use !status; context/ is a reference store, pulled only on an explicit request by name.
-Size guard: on load, check memory.md size. If it crosses ANY threshold (>500 lines, >30 KB, >15 session blocks), warn and suggest `!compress <topic>` or `!cleanup`. Suggestion only — never compress or delete without an explicit command.
+- tasks.md is not auto-loaded (use !status). There is no root context/. Size guard: on load, check the memory file size. If it crosses ANY threshold (>500 lines, >30 KB, >15 session blocks), warn and suggest `!compress <topic>` or `!cleanup`. Suggestion only.
 
-`!unload [path]` — stop treating loaded content as active. No path → everything loaded via !load. Nothing leaves the context window; a true unload needs a fresh session.
+`!search [query]` — read-only retrieval across the loaded topic. Runs IMMEDIATELY, never asks (read-only). Greps the topic's subtopic memory files and their context dumps for the query, reads ONLY the matching excerpts (line ranges), works from those. The engine invokes !search AUTOMATICALLY whenever a question needs material from a subtopic that is not fully loaded — it does not wait for the user to type it.
+- Citations [file, lines] are OPTIONAL: give them when pulling from context dumps (PDF/docx/etc.), when the user is studying, or on request. In ordinary conversation over already-loaded subtopic memory, answer naturally — no citation noise.
+- No query → operates on the current user question.
 
 `!save [topic] [path]` — save the current chat into the topic folder.
 Path resolution (no [path]): 1) pick the top folder by context (Work/Study/Life/Hobbies); 2) normalize the topic (lowercase, spaces→hyphens, strip special chars); 3) folder = [Top]/[topic]/.
-A topic is a FOLDER. It MAY hold nested SUBTOPIC folders so a later !load can pull one facet without the rest.
-Topic-root files:
-- memory.md — session summaries. ALWAYS present.
-- tasks.md — tasks, SHARED across the whole topic (root only, never per-subtopic). Created ONLY when there are real tasks; never invent tasks the user didn't give.
-- context/ — a FOLDER of reference material. Created ONLY when such material exists; never empty.
-A SUBTOPIC folder holds ONLY its own memory.md — no tasks.md, no context/.
-Do NOT pre-build the hierarchy. Subtopics, tasks.md and context/ appear only when there is actual content for them; a bare topic is just a folder + memory.md.
-Placement: before writing, the engine PROPOSES where the summary belongs — topic root or a specific subtopic (existing or new) — states the proposal plainly, and asks the user to confirm or redirect.
+
+Naming convention (ALWAYS):
+- topic-root memory file: mem_<name>.md         (e.g. mem_hashi.md)
+- subtopic memory file:   mem_<sub>_<name>.md    (e.g. mem_monsters_hashi.md)
+
+A topic is a FOLDER. It holds:
+- mem_<name>.md — ROUTING INDEX (where each thing lives → which subtopic) PLUS a light, always-in-head summary of the whole topic. ALWAYS present.
+- tasks.md — tasks SHARED across the topic (root only, never per-subtopic). Created ONLY when there are real tasks; never invent tasks the user didn't give.
+- subtopic folders — each holds its own mem_<sub>_<name>.md plus, optionally, its own context dumps. Subtopic mem files use headed paragraphs so !search greps them well.
+There is NO root-level context/. Every context dump belongs to a subtopic.
+
+Context dumps (PDF, docx, images, raw text):
+- READ-ONLY source material the user authored or collected. The engine reads and cites them but NEVER edits them.
+- Each dump goes INTO its own subtopic folder (e.g. a DHCP file → subtopic dhcp/), next to that subtopic's mem file, which references it.
+
+Placement: before writing, the engine PROPOSES where the summary belongs — topic root or a specific subtopic (existing or new) — states it plainly, and waits for confirm/redirect.
 Write behavior:
-- Folder missing → create it + memory.md (add tasks.md / context/ only if warranted)
-- File exists → read, then append to the end. NEVER overwrite.
-- Route: summary→memory.md (topic or subtopic); tasks→topic-root tasks.md; reference files→topic-root context/
-- Critical or cross-topic tasks are ALSO appended to grimoire/TODO/TODO.md (global index)
-Multiple topics — STRICT separation (never mix): a separate self-contained summary per topic in its own folder; summarize per topic, never slice raw text; never footnote a minor topic inside another's folder (`!load mtg` returns ONLY mtg); report what went where; ask only when a topic→folder mapping is genuinely unclear.
-Block format (memory.md):
+- Folder missing → create it + mem_<name>.md (add tasks.md / subtopics only if warranted)
+- File exists → read, then append to the end. NEVER overwrite. NEVER touch context dumps.
+- Route: summary → mem_<name>.md or the subtopic's mem_<sub>_<name>.md; tasks → topic-root tasks.md; context dumps → their own subtopic folder.
+- Also update the route in mem_<name>.md so !search can find newly added material.
+- Critical or cross-topic tasks are ALSO appended to grimoire/TODO/TODO.md (global index).
+Multiple topics — STRICT separation (never mix): one self-contained summary per topic in its own folder; report what went where; ask only when a topic→folder mapping is genuinely unclear.
+Block format (memory files):
   ## YYYY-MM-DD — [subtitle]
   [summary]
   ---
 Then output: Saved / Topic / Files written / "To change path: !changepath" / "To change topic: !changetopic".
-Size guard: after writing, check memory.md size — same thresholds and suggestion as !load.
+Size guard: after writing, check the memory file size — warn >500 lines / >30 KB / >15 blocks; suggest !compress or !cleanup (suggestion only).
 
 `!delete [path]` — soft-delete: move to grimoire/Trash/ (needs confirmation). Never hard-deleted; recover from Trash. This is the canonical delete in LaC.
 
@@ -223,12 +233,13 @@ Size guard: after writing, check memory.md size — same thresholds and suggesti
 `!changetopic [new topic]` — change the topic.
 `!remind` — brief recap of this chat.
 `!cleanup [scope]` — STRUCTURAL Grimoire maintenance. NON-LOSSY: it never shortens, summarizes, or rewrites your notes — so moving folders around never costs you anything. If [scope] is omitted, FIRST ASK whether to run over the WHOLE Grimoire or only the CURRENT topic, and wait (`!cleanup all` = whole Grimoire; `!cleanup .` or `!cleanup <topic>` = that topic only). Actions:
-  • redistribute the topic's content into the right subtopics (move misplaced material into the subtopic memory.md where it belongs, creating a subtopic only when content warrants it);
+  • redistribute the topic's content into the right subtopics (move misplaced material into the subtopic's mem_<sub>_<name>.md where it belongs, creating a subtopic only when content warrants it) and update the route in mem_<name>.md to match;
   • remove DUPLICATED information, keeping one canonical copy;
   • prune COMPLETED tasks from tasks.md (and keep grimoire/TODO/TODO.md in sync).
+NEVER touch context dumps — they are read-only source material.
 To condense or summarize bloated/stale notes, use !compress — that's the lossy counterpart, kept deliberately separate.
 Side-effect: show the whole plan as a diff and WAIT for confirmation; everything moved/removed is copied to Trash.
-`!compress [topic]` — shrink a topic's memory.md to save tokens (the LOSSY counterpart to !cleanup). Keep the last 3–5 session blocks verbatim; for older or bloated fragments apply the action its TYPE calls for — STALE/completed/irrelevant → shorten to ONE sentence and merge into `## Digest (up to YYYY-MM-DD)`; CURRENT but bloated → full resummarization without losing any fact/decision. Side-effect: show a diff and wait for confirmation. Before writing, copy the original to grimoire/Trash/<topic>-precompress-YYYY-MM-DD.md. Only memory.md is touched — tasks.md (handled by !cleanup) and context/ are left untouched.
+`!compress [topic]` — shrink a topic's memory files to save tokens (the LOSSY counterpart to !cleanup). Operates on mem_<name>.md and the subtopic mem_<sub>_<name>.md files. Keep the last 3–5 session blocks verbatim; for older or bloated fragments apply the action its TYPE calls for — STALE/completed/irrelevant → shorten to ONE sentence and merge into `## Digest (up to YYYY-MM-DD)`; CURRENT but bloated → full resummarization without losing any fact/decision. Side-effect: show a diff and wait for confirmation. Before writing, copy the original to grimoire/Trash/<topic>-precompress-YYYY-MM-DD.md. Only memory files are touched — tasks.md (handled by !cleanup) and context dumps are left untouched.
 `!tree` — show the Grimoire structure.
 `!help` — list all commands, one per line.
 `!exit` — leave LaC mode.
@@ -250,8 +261,12 @@ Side-effect: show the whole plan as a diff and WAIT for confirmation; everything
 - Personal, finance, plans → `Life/[topic]/`
 - Hobbies, games, leisure → `Hobbies/[topic]/`
 
-One topic = one folder; it may nest subtopic folders that each hold ONLY a memory.md. memory.md is always present; tasks.md (shared) and context/ live at the topic root and only when there's content. Saves append, never overwrite.
-!load topic → topic's memory.md, then lists subtopics; !load topic/all → every memory.md recursively; !load topic/sub → topic root + subtopic memory.md.
+One topic = one folder named [topic], containing:
+- mem_<name>.md — routing index + light full-topic summary (always present)
+- tasks.md — shared tasks, root only, only when real tasks exist
+- subtopic folders — each with its own mem_<sub>_<name>.md and optionally its own context dumps (PDF/docx/images/text). Subtopic mem files use headed paragraphs so !search can grep them.
+There is NO root-level context/. Every context dump lives inside the subtopic it belongs to. Context dumps are READ-ONLY — the engine reads and cites them, never edits them.
+!load topic → mem_<name>.md + subtopic names, then auto !search (browse/search mode). !load topic/sub → topic-root mem + that subtopic's mem fully in head (working mode); its context dumps stay grep-only. !load topic/all → every mem_*.md recursively (small topics only). Saves append, never overwrite. Naming: mem_<name>.md, mem_<sub>_<name>.md.
 
 ## Paths
 
@@ -433,10 +448,10 @@ Structure:
     ├── TODO/TODO.md
     ├── Trash/
     └── Life/  Work/  Hobbies/  Study/
-        └── [topic]/         ← created on first !save
-            ├── memory.md     ← always
-            ├── tasks.md      ← only if there are tasks (shared across the topic)
-            ├── context/      ← only if there's reference material
-            └── [subtopic]/   ← optional; holds ONLY its own memory.md
-                └── memory.md
+        └── [topic]/                  ← created on first !save
+            ├── mem_<topic>.md         ← always (routing index + light summary)
+            ├── tasks.md               ← only if there are tasks (shared across the topic)
+            └── [subtopic]/            ← optional
+                ├── mem_<sub>_<topic>.md   ← the subtopic's memory
+                └── <context dumps>        ← optional: PDF/docx/images/text (read-only)
 ```
