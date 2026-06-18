@@ -1,6 +1,6 @@
 # LaC Setup
 > LLM as Code — installer for Claude Code (terminal or desktop app)
-> Version: 0.4.1
+> Version: 0.4.5
 
 ---
 
@@ -32,9 +32,9 @@ Create these folders in the project root:
 ```
 personas/
 spells/
+spells/noslop/
 grimoire/
 grimoire/core/
-grimoire/TODO/
 grimoire/Trash/
 grimoire/Life/
 grimoire/Work/
@@ -42,6 +42,8 @@ grimoire/Hobbies/
 grimoire/Study/
 .claude/
 ```
+
+`grimoire/core/` holds `core.md` (the user's personal context) and `TODO.md` (the global task index); both load every session. There is no separate `grimoire/TODO/` — the TODO lives inside `core/`. `spells/noslop/` ships with the bundled `noslop` spell (see Step 5b).
 
 Topic subfolders inside `Life/`, `Work/`, `Hobbies/`, `Study/` are created later, on the first `!save` for a topic. Subtopics and `tasks.md` are NOT pre-built — they appear only when there is real content. There is no root-level `context/`; context dumps (PDF/docx/images/text) live inside the subtopic they belong to.
 
@@ -60,7 +62,7 @@ Create `llm_compose.md` in the root. Markdown file, config inside a fenced `yaml
 > Only the administrator may edit this file.
 
 ```yaml
-version: "0.4.1"
+version: "0.4.5"
 
 model:
   # Claude Code chooses the model; this block is documentation only.
@@ -82,7 +84,7 @@ context:
   limits: limits.md
   commands: commands.md
   persona: personas/velmir_persona.md
-  core: grimoire/core/core.md
+  core: grimoire/core
 
 grimoire:
   root: grimoire/
@@ -217,7 +219,7 @@ Write behavior:
 - File exists → read, then append to the end. NEVER overwrite. NEVER touch context dumps.
 - Route: summary → mem_<name>.md or the subtopic's mem_<sub>_<name>.md; tasks → topic-root tasks.md; context dumps → their own subtopic folder.
 - Also update the route in mem_<name>.md so !search can find newly added material.
-- Critical or cross-topic tasks are ALSO appended to grimoire/TODO/TODO.md (global index).
+- Critical or cross-topic tasks are ALSO appended to grimoire/core/TODO.md (global index).
 Multiple topics — STRICT separation (never mix): one self-contained summary per topic in its own folder; report what went where; ask only when a topic→folder mapping is genuinely unclear.
 Block format (memory files):
   ## YYYY-MM-DD — [subtitle]
@@ -229,11 +231,11 @@ Block format (memory files):
 Then output: Saved / Topic / Files written / "To change path: !changepath" / "To change topic: !changetopic".
 Size guard: after writing, check the memory file size — warn >500 lines / >30 KB / >15 blocks; suggest !compress or !cleanup (suggestion only).
 
-`!delete [path]` — soft-delete: move to grimoire/Trash/ (needs confirmation). Never hard-deleted; recover from Trash. This is the canonical delete in LaC.
+`!delete [path]` — soft-delete to grimoire/Trash/ (needs confirmation). The engine has no Bash and cannot move files itself — it states this plainly, outputs the ready-to-run `mv` command for the user to execute, and verifies after. Never hard-deleted; recover from Trash. Canonical delete in LaC. See "Filesystem moves" below.
 
 `!path` — show this chat's saved path.
 `!changepath [new path]` — change this chat's saved path.
-`!status` — active tasks from grimoire/TODO/TODO.md (global index; per-topic detail in each topic's tasks.md).
+`!status` — active tasks from grimoire/core/TODO.md (global index; per-topic detail in each topic's tasks.md).
 `!focus` — bring the conversation back to the current chat's topic.
 `!topic` — show the saved file's topic.
 `!changetopic [new topic]` — change the topic.
@@ -241,7 +243,7 @@ Size guard: after writing, check the memory file size — warn >500 lines / >30 
 `!cleanup [scope]` — STRUCTURAL Grimoire maintenance. NON-LOSSY: it never shortens, summarizes, or rewrites your notes — so moving folders around never costs you anything. If [scope] is omitted, FIRST ASK whether to run over the WHOLE Grimoire or only the CURRENT topic, and wait (`!cleanup all` = whole Grimoire; `!cleanup .` or `!cleanup <topic>` = that topic only). Actions:
   • redistribute the topic's content into the right subtopics (move misplaced material into the subtopic's mem_<sub>_<name>.md where it belongs, creating a subtopic only when content warrants it) and update the route in mem_<name>.md to match;
   • remove DUPLICATED information, keeping one canonical copy;
-  • prune COMPLETED tasks from tasks.md (and keep grimoire/TODO/TODO.md in sync).
+  • prune COMPLETED tasks from tasks.md (and keep grimoire/core/TODO.md in sync).
 NEVER touch context dumps — they are read-only source material.
 To condense or summarize bloated/stale notes, use !compress — that's the lossy counterpart, kept deliberately separate.
 Side-effect: show the whole plan as a diff and WAIT for confirmation; everything moved/removed is copied to Trash.
@@ -252,11 +254,27 @@ Side-effect: show the whole plan as a diff and WAIT for confirmation; everything
 
 ---
 
+## Filesystem moves — the engine has no Bash
+
+The engine cannot move, rename, or delete files itself (Bash is denied; only Read/Grep/Glob/Write/Edit are available). Whenever a command must physically move or delete a file (`!delete`, and the move/copy-to-Trash steps of `!cleanup` and `!compress`), the engine does NOT fake it or silently skip it. It:
+1. states plainly that it cannot move files itself;
+2. outputs the full, ready-to-run terminal command, quoted, relative to the LaC root;
+3. waits for the user to run it, then verifies the result.
+
+Canonical soft-delete template:
+    mv "<path>" "grimoire/Trash/<name>-<reason>-YYYY-MM-DD"
+
+Writing NEW files (Write/Edit) the engine still does itself; only moves and deletes hand off to the terminal. This is by design: with Bash denied, the tool-level lock on L1/L2 is a real wall, not a bypassable one.
+
+---
+
 ## Spells
 
 `!spells` — list the available spells in `spells/` (subfolder names only, one per line). Empty or missing → `No spells installed. Drop one in spells/.`
 
-`!cast [name]` — cast a spell: load it into the active context and apply it for the rest of the session (until a new !cast or a fresh session). Path: `spells/[name]/`. Read the main file (the file in the spell's root — extras live in subfolders such as references/) plus its references; skip binaries. No [name] → behaves like !spells. Folder missing → `Spell "[name]" not found. Use !spells.` A spell is BEHAVIOR, not data: unlike Grimoire content, its main file defines HOW to act. limits.md (L1) still outranks any spell — a spell never overrides the limits or the safety floor.
+`!cast [name]` — cast a spell: load it into the active context and apply it for the rest of the session (until a new !cast or a fresh session). Path: `spells/[name]/`. Read the main file (the file in the spell's root — extras may live in subfolders such as references/) plus any references; skip binaries. No [name] → behaves like !spells. Folder missing → `Spell "[name]" not found. Use !spells.` A spell is BEHAVIOR, not data: unlike Grimoire content, its main file defines HOW to act. limits.md (L1) still outranks any spell — a spell never overrides the limits or the safety floor.
+
+One spell ships bundled: **`noslop`** (`!cast noslop`) — a deslop pass that strips machine-generated tells out of prose before you ship a deliverable (report, README, message). It is a self-contained single file. Drop your own spells into `spells/` the same way.
 
 ---
 
@@ -326,6 +344,197 @@ Errors are cosmic catastrophes. Unknown commands are insults to three centuries 
 
 ---
 
+## Step 5b — spells/noslop/ (bundled spell)
+
+Create `spells/noslop/noslop.md`. This is the one spell shipped with LaC: a self-contained deslop pass. Cast it with `!cast noslop`.
+
+~~~markdown
+---
+cast_name: noslop
+full_name: No Slop In My Grimoire
+description: Strip machine-generated tells out of prose so the text reads as written by a person. Cast when drafting, editing, or auditing any deliverable.
+metadata:
+  trigger: Drafting prose, editing a draft, auditing text for AI fingerprints
+  author: Diranix
+---
+
+# No Slop In My Grimoire
+
+A pass that pulls the AI fingerprints out of writing and leaves a human voice behind.
+
+> Cast it with `!cast noslop`. One self-contained file: rules, catalogues, and checks in one place. Kept in English on purpose, so one vocabulary describes the work no matter what language the edited text is in.
+
+## What this is for
+
+Run deslop over text you are about to ship: a report, a README, a message, public copy. It does two jobs at once. It removes the surface tells a language model leaves (canned phrases, dressed-up verbs, dead rhythm, stray characters), and it forces the deeper test that no detector applies: does each paragraph actually carry information, or is it fluent filler.
+
+This is a mirror for your own draft, not a verdict on someone else's. A tone or a word choice is a reason to reread a sentence, nothing more. Only the mechanical artifacts (invisible codepoints, a foreign-script fragment, mixed quote styles) are things a person does not type by hand. Weigh accordingly: style is a hint, machinery is evidence.
+
+## Two layers of tell
+
+- **Mechanical.** Characters and marks a human keyboard does not produce: zero-width codepoints, an em dash where a person would type a comma, curly and straight quotes mixed in one file, a Cyrillic letter inside a Latin word. These are checkable. A regex finds them. They are the strongest sign that text was assembled from model output.
+- **Stylistic.** Phrasing habits a model overuses: throat-clearing openers, the flight from "is" into "serves as," the three-item list, the participle clause bolted on to explain why a fact matters. Each one alone proves nothing. A cluster is the fingerprint.
+
+Hunt the mechanical layer with a tool. Read the stylistic layer with judgement.
+
+## Language scope
+
+Some rules hold in any language: dash discipline, one quote style, no emoji as structure, no invisible characters, no synonym-churn, no padding, no mixed-script bleed, no reflexive passive. Apply them everywhere.
+
+The rest are tied to English: articles, the "is/are" copula, Wh- openers, the jargon and AI-vocabulary lists, the calque check. On a non-English draft, do not run the English word lists straight. Find the local equivalent instead. When the text was written in one language and carried into another, the carry itself is where most tells are born.
+
+## The rules
+
+**1. Cut the throat-clearing.** Drop the openers that announce a point before making it, the crutches that beg for emphasis, and the empty intensifiers (very, really, quite, basically, just). Keep an adverb only when it changes the meaning.
+
+**2. Name the actor.** Every sentence wants a subject who does something. Rewrite the passive to put the doer in front. Never let an object perform a human verb: a complaint does not become a fix, a decision does not emerge, data does not tell you anything. A person did it. Say who.
+
+**3. Keep the plain copula.** "Is," "are," "has" are good prose. Do not flee them into "serves as," "stands as," "boasts," "features," "represents." Put the plain verb back.
+
+**4. Drop the formula structures.** No telegraphed reversal ("not X, it's Y"), no negative striptease, no staccato fragments staged as profundity, no Socratic "what if" setup. State the conclusion and trust the reader to follow.
+
+**5. Cut the participle commentary tail.** A model states a fact, then bolts on "..., highlighting its importance" or "..., reflecting a broader trend." Stop at the fact. If the consequence matters, give it its own sentence with a real subject. This is the single most reliable tell.
+
+**6. Deflate the significance.** No "stands as a testament," no "marks a pivotal moment," no "part of a broader movement." State what happened. "Founded in 1989" beats "founded in 1989, a defining moment in the field."
+
+**7. Be concrete.** A vague declarative ("the implications are significant") says nothing. Name the implication, name the reason. Drop the lazy extremes ("every," "always," "never") that paint authority over an unverified claim.
+
+**8. Delete the disclaimers and the chatter.** No "it's important to note," no "as of my knowledge cutoff," no "while details are limited, it likely..." (delete the guess with the disclaimer), no "In conclusion," no "Certainly! Happy to help."
+
+**9. Thin the AI vocabulary.** Watch the density of delve, tapestry, intricate, robust, showcase, underscore, pivotal, foster, garner, leverage, vibrant, meticulous, crucial, seamless. One is coincidence. A cluster is the signature. Swap for the plain word.
+
+**10. Reuse the right word.** Do not swap in a synonym every time a noun comes back. Synonym-churn reads thesaurus-driven and loses precision. Pick the accurate term and repeat it; change words only when the meaning changes.
+
+**11. Vary the rhythm.** Mix sentence lengths. Two items make a list as well as three. End paragraphs differently. The only dash is the short hyphen (-); no em dash, no en dash. Separate clauses with a comma or a full stop.
+
+**12. Cut the catalogue.** Describe what you did, not the whole menu the tool offered. Drop the options you did not pick, the explanations of standard behavior, and the justification clause repeated word-for-word. Friction is what makes it read human: "the ping failed at 20% because ARP had not resolved, retried, then held." Keep the friction, cut the catalogue.
+
+**13. One language, one script.** A document in one language must not carry a stray sentence, phrase, or word in another, and a Latin-script text must not carry a stray Cyrillic or Greek character. This is the clearest sign of text stitched from separate generations. Scan for it on purpose and rewrite the stray fragment in the document's language.
+
+**14. Clear the non-native tells (English).** Check the articles (a/an/the) and the prepositions (in/on/at). If a sentence reads like a word-for-word carry from another language, rebuild it in English word order.
+
+**15. The information test.** Cover each paragraph with your hand. If deleting it loses no fact, claim, or step, delete it. Do not rewrite an empty paragraph more smoothly; cut it. A fluent paragraph that says nothing is still nothing.
+
+**16. The invisible pass.** Run a separate, deliberate sweep for non-printing characters before you ship. Normalizing quotes and Markdown does not catch them.
+
+## Phrase catalogue
+
+Phrasing a model overuses, grouped by what the phrase is doing. Cut it and state the content.
+
+**Openers that announce instead of stating.** "Here's the thing:" and every "here's what / here's why" variant; "The truth is," / "The real question is," / "Let me be clear"; "It turns out that"; "I'm going to be honest with you." Any "here's ..." construction stalls in front of the point.
+
+**Emphasis crutches.** "Full stop." / "Period."; "Let that sink in."; "Make no mistake."; "This matters because" (then say why, without the frame).
+
+**Empty intensifiers.** really, just, literally, genuinely, honestly, simply, actually, truly, deeply, fundamentally, inherently, inevitably, interestingly, importantly, crucially. Plus filler openers: "at its core," "at the end of the day," "when it comes to," "in today's world," "the reality is," "it's worth noting."
+
+**Business jargon.** navigate a challenge → handle; unpack → explain; lean into → commit to; landscape → field; game-changer → a big shift; deep dive → a close look; moving forward → from here; circle back → return to; on the same page → agreed.
+
+**Vague declaratives.** "the reasons are structural"; "the implications are significant"; "the stakes are high." Name the specific thing or cut.
+
+**Significance and legacy puffery.** "stands as / serves as a testament to"; "marks a pivotal / defining moment"; "part of a broader movement / trend"; "setting the stage for"; "leaves a lasting mark." Drop the frame, keep the fact.
+
+**Brochure and peacock words.** "boasts" (meaning has); "nestled in / in the heart of"; "vibrant," "rich," "iconic," "renowned," "groundbreaking"; "showcasing," "seamlessly," "thoughtfully."
+
+**Knowledge-gap disclaimers.** "as of my last training update"; "while specific details are limited"; "based on available information"; "it likely / probably supports." Delete the disclaimer and the guess together.
+
+**Hand-holding disclaimers.** "it's important / crucial to note that"; "it's worth remembering that"; "keep in mind that." State the point, let the reader weigh it.
+
+**Closing recaps.** "In summary," / "In conclusion," / "Overall,"; a final paragraph repeating the thesis. End on the last real point.
+
+**Assistant chatter.** "Certainly!" / "Of course!" / "Great question!"; "I hope this helps"; "Would you like me to..."; "Here is a detailed breakdown." Delete it whole.
+
+**AI-vocabulary cluster.** One is coincidence; three in a paragraph is a fingerprint: additionally (sentence start), align with, boasts, bolster, crucial, delve, emphasize, enhance, foster, garner, highlight (verb), interplay, intricate, leverage, meticulous, pivotal, robust, seamless, showcase, tapestry, testament, underscore, vibrant.
+
+## Structure catalogue
+
+Sentence shapes a model falls into, with the fix.
+
+**Telegraphed reversal** ("not X, it's Y"). "X isn't the problem. Y is."; "The answer isn't X. It's Y."; "not just X but also Y." Fix: state Y, drop the negation.
+
+**Negative striptease.** "Not a X. Not a Y. A Z." Fix: name Z.
+
+**Staged fragments.** "[Noun]. That's it. That's the [thing]."; "X. And Y. And Z." Fix: complete sentences.
+
+**Rhetorical setup.** "What if [reframe]?"; "Here's what I mean:"; "Think about it:". Fix: make the point.
+
+**Object doing a human verb.** "the decision emerges" → someone decided; "the culture shifts" → people changed how they work; "the data tells us" → someone read the data and concluded. Fix: name the person, or use "you".
+
+**Passive voice.** "X was created" → name who created it; "mistakes were made" → name who made them. Leave genuine past-perfect ("has been") alone.
+
+**Fleeing the plain copula.** "serves as / stands as / functions as" → is; "boasts / features / offers / maintains" → has; "represents / constitutes" → is.
+
+**Participle commentary tail** (the strongest single tell). "..., highlighting its importance."; "..., reflecting the broader context."; "..., ensuring a seamless experience." Fix: stop at the fact.
+
+**Synonym churn (elegant variation).** Swapping in a new synonym every time a noun recurs. Fix: pick the accurate word and reuse it.
+
+**Wh- and filler openers.** Sentences opening with What / When / Where / Why / How → lead with the subject or verb; paragraphs opening with "So" → start with content.
+
+**Dead rhythm.** Three-item lists by reflex → two or one; every paragraph ending on a punchline → vary; stacked short punchy sentences → mix in a longer one.
+
+**Catalogue padding.** Describing options you did not pick; explaining standard behavior; the same justification repeated verbatim. Fix: say what you did and why, once, in your own words.
+
+## Quick pass
+
+Before delivery, walk this once:
+
+- Throat-clearing opener or empty intensifier? Cut.
+- Passive voice, or an object doing a human verb? Find the doer, put them in front.
+- "Serves as / boasts / represents" where "is" or "has" works? Swap back.
+- "Not X, it's Y" reversal, or a "what if" setup? State Y.
+- Sentence ending in a participle commentary tail? Stop at the fact.
+- Significance frame? Cut it.
+- Vague declarative? Name the thing.
+- Disclaimer plus a guess? Delete both.
+- Leftover chatter? Delete.
+- Three or more AI-vocab words in a paragraph? Thin them.
+- Same noun swapped for three synonyms? Pick one, reuse it.
+- Three sentences the same length, or every paragraph ending on a punchline? Break the pattern.
+- Any em or en dash? Replace with a comma or a full stop.
+- A stray word in another language, or stray Cyrillic in a Latin text? Rewrite it.
+- Invisible characters? Strip them in the dedicated pass.
+- Cover each paragraph: does deleting it lose anything? If not, cut it whole.
+
+## Formatting
+
+Prose should not arrive dressed as a chatbot reply. Strip these unless the target medium asks for them.
+
+- Sentence-case headings, not Title Case.
+- No mechanical bolding of every key term, no "key takeaways" banner.
+- No stack of "**Bold header:** description" bullets running down the page.
+- One quote style. Straight quotes and a straight apostrophe, unless the house style demands typographer's quotes. Never mix the two in one file.
+- No emoji decorating headings or bullets.
+- Match the target format. Do not leak Markdown into prose meant for another system.
+
+## Invisible characters
+
+A strip pass on its own, separate from quote and Markdown cleanup:
+
+- zero-width space / non-joiner / joiner: U+200B, U+200C, U+200D
+- zero-width no-break space / byte-order mark: U+FEFF
+- non-breaking space: U+00A0 (replace with a normal space)
+- soft hyphen: U+00AD
+- directional marks (LRM / RLM): U+200E, U+200F
+
+For certainty, sweep the codepoints with a regex as the last step.
+
+## Keep these (signs of a human)
+
+The goal is a human voice, not bland safe text:
+
+- Plain "is / are / has / there is a."
+- Plain verbs over stiff synonyms: wrote, not authored; used, not utilized; tried, not attempted; died, not passed away.
+- An earned superlative: "the first," "the only," "one of the best."
+- Honest hedging the writer means: "perhaps," "I think," "tends to."
+
+If a fix makes the text blander, more cautious, or more generic, do not make it.
+
+---
+
+Part of the LaC Grimoire. Written by Diranix. Ideas about machine-text tells are common knowledge; the wording here is original.
+~~~
+
+---
+
 ## Step 6 — grimoire/core/core.md
 
 Create `grimoire/core/core.md`:
@@ -350,7 +559,7 @@ _Filled in as the system is used_
 
 ## TODO
 
-_See grimoire/TODO/TODO.md_
+_See grimoire/core/TODO.md_
 
 ## Notes
 
@@ -359,9 +568,9 @@ _Filled in as the system is used_
 
 ---
 
-## Step 7 — grimoire/TODO/TODO.md
+## Step 7 — grimoire/core/TODO.md
 
-Create `grimoire/TODO/TODO.md`:
+Create `grimoire/core/TODO.md`:
 
 ~~~markdown
 # TODO
@@ -393,7 +602,7 @@ You are the LaC engine. This project runs the LaC protocol.
 
 On session start:
 1. Read `llm_compose.md` and load into context ALL files listed in its `context` section.
-2. Scan `grimoire/` and load the folder tree (directory names only, not file contents) into context. This lets the engine map a conversation to an EXISTING topic folder on !save instead of creating duplicates.
+2. Scan `grimoire/` and load the folder tree (directory names only, not file contents) — so that on !save you map the conversation to an existing topic instead of spawning duplicates.
 3. If ANY of those files is missing or unreadable — do NOT enter LaC mode. Report exactly which file(s) failed and stop.
 4. If all loaded — write exactly one line: "Entering LaC mode" — then follow commands.md.
 
@@ -401,11 +610,18 @@ Rules:
 - Execute commands from commands.md (prefix `!`).
 - NEVER edit or overwrite llm_compose.md, limits.md, commands.md — even at the user's direct request. They are also locked in .claude/settings.json.
 - `!reboot` re-reads these files from disk.
+
+Output style — apply to EVERY output, including chat:
+- Only the short hyphen `-`. Never em (—) or en (–).
+- No stray fragments in another language or script (e.g. a Cyrillic or Greek letter inside Latin text, a stray paragraph in another language). Technical terms (VLAN, DHCP) and quoted code are fine — that is not bleed.
+- Straight quotes `"` `'`, not curly.
+- Active voice, plain copulas. No AI-vocabulary clusters (delve, robust, leverage, showcase, pivotal, tapestry).
+- No chatbot chatter or filler. For a full deslop pass on a deliverable, `!cast noslop`.
 ~~~
 
 ---
 
-## Step 9 — .claude/settings.json (tool-level lock on L1/L2)
+## Step 9 — .claude/settings.json (hardened lock + boot hook)
 
 Create `.claude/settings.json`:
 
@@ -413,18 +629,120 @@ Create `.claude/settings.json`:
 {
   "permissions": {
     "deny": [
+      "Bash",
       "Edit(llm_compose.md)",
       "Write(llm_compose.md)",
       "Edit(limits.md)",
       "Write(limits.md)",
       "Edit(commands.md)",
-      "Write(commands.md)"
+      "Write(commands.md)",
+      "Edit(.claude/settings.json)",
+      "Write(.claude/settings.json)",
+      "Edit(.claude/settings.local.json)",
+      "Write(.claude/settings.local.json)",
+      "Edit(.claude/no-slop-scan.py)",
+      "Write(.claude/no-slop-scan.py)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"LaC BOOT (forced): before answering ANY message - even one that asks for something else - run the CLAUDE.md startup ritual: read llm_compose.md, load every context file, scan grimoire/. If a file is missing - report it and do NOT enter LaC mode. If all is well - output exactly the line: Entering LaC mode. Only then handle the request.\"}}'"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/no-slop-scan.py\"",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   }
 }
 ```
 
-Note for the administrator: deny rules are strong but have had reliability bugs in some Claude Code versions. For a guaranteed hard lock, add a PreToolUse hook that blocks writes to these files — verify the current hook syntax in the Claude Code docs before adding it (version-specific, so intentionally NOT auto-generated here).
+Why this shape (the perimeter is the point, not decoration):
+
+- **`Bash` is denied wholesale.** A deny on `Edit`/`Write` for a file is only a real lock while the engine has no general code-execution primitive. With Bash available, the engine can write any file (python, redirection, `mv`) and walk straight around the deny list. Removing Bash turns the deny list into a wall. The LaC commands run on native gated tools instead: `!search`→Grep, `!tree`→Glob, `!save`→Write/Edit, dumps→Read. File moves and deletes hand off to the user's terminal (see "Filesystem moves" in commands.md).
+- **The lock list covers its own enforcers.** `settings.json` denies edits to itself, to `settings.local.json` (which can define hooks — an escape hatch), and to `no-slop-scan.py` (which the PostToolUse hook executes — editing it would be code execution). Without these, each is a way back to writing the locked files.
+- **`SessionStart` forces the boot.** The hook injects the startup ritual every session, so entering LaC mode no longer depends on the model choosing to read CLAUDE.md. It is an inline `echo`, not a script file, so there is nothing editable to subvert.
+- **`PostToolUse` runs the deslop guard.** A warn-only invisible-character scan on every Write/Edit (Step 9b). It never blocks and always exits 0.
+
+This deny set is **per-project** — it lives in the LaC folder's `.claude/`, not in the user's global `~/.claude/settings.json`, so it never touches Bash in the user's other projects.
+
+Note: a tool-level deny is the current ceiling of in-tool protection. The true perimeter is a layer the engine cannot reach — files owned by another user with no `sudo`, or a runtime sandbox. Add that at the OS level (`chflags uchg` on macOS / `chattr +i` on Linux for the L1/L2 backbone, removed by hand for a deliberate edit) if you want a lock the engine cannot lift even in principle.
+
+---
+
+## Step 9b — .claude/no-slop-scan.py (deslop guard hook)
+
+Create `.claude/no-slop-scan.py`. The PostToolUse hook runs it after every Write/Edit; it scans the just-written file for invisible characters and prints a warning when it finds any. It never blocks a tool call and always exits 0. Requires `python3` on PATH; if absent, the hook simply does nothing.
+
+```python
+#!/usr/bin/env python3
+# noslop PostToolUse guard: warn-only scan for invisible characters that
+# leak from LLM output / copy-paste. NEVER blocks, NEVER fails the tool call.
+# Reads the hook JSON on stdin, scans the just-written file, prints a warning
+# (systemMessage + additionalContext) only when junk is found. Always exits 0.
+import sys, json, os
+from collections import Counter
+
+FLAG = {
+    0x200B: "zero-width space", 0x200C: "zero-width non-joiner",
+    0x200D: "zero-width joiner", 0xFEFF: "BOM/zero-width no-break",
+    0x00A0: "non-breaking space", 0x00AD: "soft hyphen",
+    0x200E: "LRM", 0x200F: "RLM", 0x2028: "line separator",
+    0x2029: "paragraph separator",
+}
+TEXT_EXT = {".md", ".txt", ".json", ".ps1", ".cs", ".py", ".sh", ".js",
+            ".ts", ".yaml", ".yml", ".html", ".css", ".csv", ".xml",
+            ".cfg", ".conf", ".ini", ".toml"}
+
+try:
+    raw = sys.stdin.read()
+    data = json.loads(raw) if raw.strip() else {}
+    ti = data.get("tool_input") or {}
+    tr = data.get("tool_response") or {}
+    fp = ti.get("file_path") or tr.get("filePath")
+    if not fp or not os.path.isfile(fp):
+        sys.exit(0)
+    base = os.path.basename(fp)
+    ext = os.path.splitext(fp)[1].lower()
+    if ext not in TEXT_EXT and not base.startswith(".gitignore"):
+        sys.exit(0)
+    hits = []  # (line, name)
+    with open(fp, encoding="utf-8", errors="replace") as fh:
+        for ln, line in enumerate(fh, 1):
+            for ch in line:
+                if ord(ch) in FLAG:
+                    hits.append((ln, FLAG[ord(ch)]))
+    if hits:
+        by_name = Counter(name for _, name in hits)
+        lines = sorted({ln for ln, _ in hits})
+        summary = ", ".join(f"{n}x {name}" for name, n in by_name.items())
+        shown = lines[:20]
+        msg = (f"noslop guard: {base} contains invisible characters "
+               f"({summary}) on lines {shown}. These are machine-assembly "
+               f"tells; strip them before publishing.")
+        out = {"systemMessage": msg,
+               "hookSpecificOutput": {"hookEventName": "PostToolUse",
+                                      "additionalContext": msg}}
+        print(json.dumps(out))
+    sys.exit(0)
+except Exception:
+    # Never interfere with the tool call, whatever goes wrong.
+    sys.exit(0)
+```
 
 ---
 
@@ -436,8 +754,9 @@ Tell the user:
 ✅ LaC installed in this project.
 
 The system loads automatically — start a Claude Code session in this folder and it enters LaC mode.
-Commands: !reboot (refresh after manual file edits), !save, !load, !tree, !help.
-Immutable files (llm_compose.md, limits.md, commands.md) are locked in .claude/settings.json.
+Commands: !reboot (refresh after manual file edits), !save, !load, !tree, !help, !cast noslop.
+Immutable files (llm_compose.md, limits.md, commands.md) are locked in .claude/settings.json, which also
+denies Bash so the lock cannot be walked around. File moves/deletes are handed to your terminal.
 
 Structure:
 ├── CLAUDE.md            ← auto-loaded boot file
@@ -446,12 +765,15 @@ Structure:
 ├── commands.md
 ├── personas/
 │   └── velmir_persona.md  ← active persona (pointed to by llm_compose.md)
-├── spells/                ← on-demand behavior modules (!cast <name>); empty at install
+├── spells/
+│   └── noslop/noslop.md   ← bundled deslop spell (!cast noslop)
 ├── .claude/
-│   └── settings.json    ← tool-level lock on L1/L2
+│   ├── settings.json    ← hardened lock (L1/L2 + self + Bash off) + boot hook
+│   └── no-slop-scan.py  ← warn-only invisible-char guard (PostToolUse)
 └── grimoire/
-    ├── core/core.md
-    ├── TODO/TODO.md
+    ├── core/
+    │   ├── core.md       ← personal context (loaded every session)
+    │   └── TODO.md       ← global task index (loaded every session)
     ├── Trash/
     └── Life/  Work/  Hobbies/  Study/
         └── [topic]/                  ← created on first !save

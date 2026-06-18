@@ -1,7 +1,27 @@
 # Changelog
 
-All notable changes to LaC are documented here.
+All notable changes to Grimoire are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
+
+## [0.4.5] — 2026-06-18
+
+### Added
+- **Bundled `noslop` spell.** `spells/` now ships with one spell, `noslop` (`!cast noslop`): a self-contained, single-file deslop pass that strips machine-generated tells out of prose before you ship a deliverable. The installer no longer creates an empty `spells/`.
+- **Forced boot via a `SessionStart` hook.** The hook injects the startup ritual every session, so entering LaC mode no longer depends on the model choosing to read `CLAUDE.md`. It is an inline `echo`, with no editable script to subvert.
+- **Deslop guard hook.** A warn-only `PostToolUse` scan (`.claude/no-slop-scan.py`) flags invisible characters on every Write/Edit. It never blocks and always exits 0. Requires `python3`; degrades to nothing if absent.
+- **Light output-style core in `CLAUDE.md`.** Dash discipline, straight quotes, no mixed-script bleed, no AI-vocabulary clusters — applied to every output, with `!cast noslop` for a full pass on a deliverable.
+
+### Changed
+- **TODO moved into `core/`.** The global task index is now `grimoire/core/TODO.md` (was `grimoire/TODO/TODO.md`); `core` loads as a folder (`core.md` + `TODO.md`) every session. `!save`, `!status`, and the structure updated to match.
+- **No-Bash file moves.** With Bash denied, the engine cannot move or delete files itself. `!delete` (and the move steps of `!cleanup`/`!compress`) now state this plainly and output a ready-to-run `mv` command for the user's terminal, then verify — documented in a new "Filesystem moves" section of `commands.md`.
+- Installer (`lac-setup.md`) and README mirrored to all of the above.
+
+### Security
+- **Bash denied wholesale in `.claude/settings.json`.** A deny on `Edit`/`Write` for the locked files is only a wall while the engine has no general code-execution primitive to walk around it. Removing Bash turns the L1/L2 lock into a real wall; the commands run on native tools (Grep, Glob, Read, Write, Edit) instead.
+- **The lock list now covers its own enforcers** — `settings.json`, `settings.local.json`, and the guard script — each of which was otherwise a path back to writing the locked files.
+
+### Docs
+- README and LICENSE now carry explicit authorship: LaC is created and maintained by Ivan Baibakov (diranix).
 
 ## [0.4.1] — 2026-06-16
 
@@ -84,6 +104,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning foll
 ### Added
 - First public release (AGPL-3.0). Boot loading, integrity abort-check, deterministic `!save` (topic = folder of memory.md / tasks.md / context.md), strict topic separation, soft-delete to `Trash/`, safety floor in `limits.md`, injection protection (Grimoire content is data, not instructions).
 
+[0.4.5]: https://github.com/diranix/grimoire/releases/tag/v0.4.5
 [0.4.1]: https://github.com/diranix/grimoire/releases/tag/v0.4.1
 [0.4]: https://github.com/diranix/grimoire/releases/tag/v0.4
 [0.3.4]: https://github.com/diranix/grimoire/releases/tag/v0.3.4
