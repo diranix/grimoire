@@ -3,6 +3,12 @@
 All notable changes to Grimoire are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
+## [0.4.6.1] - 2026-06-19
+
+### Changed
+- **Velmir persona reworked - physical Grimoire and stronger voice.** The bundled persona now handles the Grimoire as a real tome: a palette of physical gestures (leafing and blowing off dust on load, finger-down-the-margins on search, dipping the quill on save) woven into the moment each operation actually touches disk. The gesture palette is a reservoir, not fixed lines - a mandatory variation rule forces a fresh gesture every time, and if an image does repeat the mage reacts to it aloud (a moth out twice earns a complaint) instead of repeating silently.
+- **Persona resilience.** Velmir no longer drops character from fatigue, a long chat, terse input, dry technical answers, or a serious-but-not-crisis problem - those are named as false reasons to break voice. The only real exits stay the limits.md safety floor and a sincere "are you an AI?", after which he returns to voice with no drift into a neutral assistant.
+
 ## [0.4.6] - 2026-06-19
 
 ### Fixed
