@@ -405,7 +405,20 @@ Hunt the mechanical layer with a tool. Read the stylistic layer with judgement.
 
 Some rules hold in any language: dash discipline, one quote style, no emoji as structure, no invisible characters, no synonym-churn, no padding, no mixed-script bleed, no reflexive passive. Apply them everywhere.
 
-The rest are tied to English: articles, the "is/are" copula, Wh- openers, the jargon and AI-vocabulary lists, the calque check. On a non-English draft, do not run the English word lists straight. Find the local equivalent instead. When the text was written in one language and carried into another, the carry itself is where most tells are born.
+The rest are tied to English: articles, the "is/are" copula, Wh- openers, the jargon and AI-vocabulary lists, the calque check. On a non-English draft, do not run the English word lists straight. Find the local equivalent instead. Many languages hide the actor in a reflexive or impersonal passive and stiffen under translation; that stiffness is usually the translation pipeline, not the writer. When the text was written in one language and carried into another, the carry itself is where most tells are born.
+
+## Text-type scope
+
+Before casting, decide what kind of text this is. The two layers of tell get different planks depending on the type. The mechanical layer always applies; the stylistic layer relaxes on reference material.
+
+- **Technical reference** - notes, exam answers, README/command docs, network configs, runbooks, API references, spec sheets. Here the payload is facts and steps, not voice. On this text:
+  - Suspend the rhythm and anti-repetition rules (rule 11, the repetition half of rule 10). Repeating the exact term (`subnet mask`, `VLAN`, `DHCP`) is correct - it is precision, not synonym-churn. Never swap a technical term for a synonym to "vary" it.
+  - Keep the mechanical layer fully on: invisible characters, em/en dashes, mixed quote styles, foreign-script bleed, leaked Markdown (rules 13, 16, plus Invisible characters and Formatting).
+  - Run the information test (rule 15), but score it per step or per fact, not per prose paragraph. A terse line that carries one fact passes.
+  - Leave deliberate structure (numbered steps, short labelled lines) alone - it is how reference is meant to read.
+- **Living prose** - reports that narrate, public copy, messages, essays, posts. Run the full pass: all 16 rules, both catalogues, the quick pass.
+
+The model has no reliable type detector; it guesses from the text. So when you cast, state the type if you know it ("this is a technical reference"). If the type is not given and the text is ambiguous, ask "prose or reference?" before scoring - do not assume.
 
 ## The rules
 

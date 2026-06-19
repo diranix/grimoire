@@ -3,6 +3,12 @@
 All notable changes to Grimoire are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
+## [0.4.6.2] - 2026-06-19
+
+### Changed
+- **`noslop` spell now scopes itself by text type.** A new "Text-type scope" section splits the pass into technical reference (notes, exam answers, command/config docs) and living prose. On reference the mechanical layer stays fully on (invisible characters, em/en dashes, quote styles, script bleed, leaked Markdown) while the rhythm and anti-repetition rules suspend - repeating an exact term like `VLAN` or `subnet mask` is precision, not synonym-churn. The cast states the type, or asks "prose or reference?" when ambiguous. Prevents the deslop pass from chewing up the deliberate repetition that technical writing needs.
+- **`noslop` language scope made fully language-agnostic.** The remaining language-specific example was replaced with a general statement that many languages hide the actor in a reflexive or impersonal passive that stiffens under translation. The spell stays English-only and names no single language.
+
 ## [0.4.6.1] - 2026-06-19
 
 ### Changed
