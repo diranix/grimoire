@@ -1,6 +1,6 @@
 # LaC Setup
 > LLM as Code - installer for Claude Code (terminal or desktop app)
-> Version: 0.4.6.1
+> Version: 0.4.7
 
 ---
 
@@ -76,7 +76,7 @@ Create `llm_compose.md` in the root. Markdown file, config inside a fenced `yaml
 > Only the administrator may edit this file.
 
 ```yaml
-version: "0.4.6.1"
+version: "0.4.7"
 
 model:
   # Claude Code chooses the model; this block is documentation only.
@@ -90,7 +90,7 @@ users:
       - write: all
 
 levels:
-  1: [llm_compose.md, limits.md]   # immutable - locked in .claude/settings.json
+  1: [llm_compose.md, limits.md, CLAUDE.md, .claude]   # immutable - locked in .claude/settings.json
   2: commands.md                   # admin only
   # everything else = level 3      # user, changeable
 
@@ -208,7 +208,7 @@ This is behavior, not a command; disk is only touched on !save (side-effect, wit
 - No query → operates on the current user question.
 - Query expansion (MANDATORY): never grep the user's literal words. First expand the query into synonyms, domain jargon, error strings, file paths, and other-language equivalents - using both the model's own knowledge and the topic's route keyword cloud - then grep the UNION (ripgrep alternation, case-insensitive: `rg -i "term1|term2|..."`). The model is the embedding, applied at query time; no vectors, no server.
 - Echo the expanded terms BEFORE the result (e.g. `searching: e1000e | TX hang | ethtool | offload`) so expansion is visible and verifiable, not an invisible promise.
-- On a hit, follow the block's [[wikilinks]] and pull in linked neighbours (associative expansion).
+- On a hit, follow the block's [[wikilinks]] AND the topic's `## See also` section, pulling in linked neighbours and adjacent topics (associative graph expansion).
 
 `!save [topic] [path]` - save the current chat into the topic folder.
 Path resolution (no [path]): 1) pick the top folder by context (Work/Study/Life/Hobbies); 2) normalize the topic (lowercase, spaces→hyphens, strip special chars); 3) folder = [Top]/[topic]/.
@@ -226,6 +226,7 @@ There is NO root-level context/. Every context dump belongs to a subtopic.
 Context dumps (PDF, docx, images, raw text):
 - READ-ONLY source material the user authored or collected. The engine reads and cites them but NEVER edits them.
 - Each dump goes INTO its own subtopic folder (e.g. a DHCP file → subtopic dhcp/), next to that subtopic's mem file, which references it.
+- For EACH dump the subtopic mem file carries a short description plus a keyword cloud of its CONTENT (terms, numbers, paths inside it), not just the file name; read diagram images via Read and describe them in words. The dump stays read-only - the cloud is its searchable twin.
 
 Placement: before writing, the engine PROPOSES where the summary belongs - topic root or a specific subtopic (existing or new) - states it plainly, and waits for confirm/redirect.
 Write behavior:
@@ -242,6 +243,7 @@ Block format (memory files):
   ---
 - The keywords line is the file-side semantic layer: it lets grep hit a block whose body uses different words than the query. Maintain it on EVERY !save (one line on a block you're already writing).
 - In mem_<name>.md each route carries a keyword cloud (term → which subtopic) so !search greps the right subtopic, not the whole topic.
+- End every mem_<name>.md with a `## See also` section: TWO-WAY [[links]] to neighbouring topics, each with a one-line why (the keyword bridge for !search). If you mention topic A in B, mention B in A. Use `[[mem_<name>]]` when the target is a mem file, a plain path when it is a dump or external topic.
 Then output: Saved / Topic / Files written / "To change path: !changepath" / "To change topic: !changetopic".
 Size guard: after writing, check the memory file size - warn >500 lines / >30 KB / >15 blocks; suggest !compress or !cleanup (suggestion only).
 
@@ -645,8 +647,9 @@ On session start:
 
 Rules:
 - Execute commands from commands.md (prefix `!`).
-- NEVER edit or overwrite llm_compose.md, limits.md, commands.md - even at the user's direct request. They are also locked in .claude/settings.json.
+- NEVER edit or overwrite llm_compose.md, limits.md, commands.md, CLAUDE.md - even at the user's direct request. They are also locked in .claude/settings.json.
 - `!reboot` re-reads these files from disk.
+- Context budget: keep routes in head, not territory (mem summaries + subtopic names, not their contents). When many topics or subtopics pile up in head, periodically nudge: "a lot in head, narrow to one topic". A nudge, not an action - nothing is dropped from head without a command.
 
 Output style - apply to EVERY output, including chat:
 - Only the short hyphen `-`. Never em (—) or en (–).
@@ -654,6 +657,11 @@ Output style - apply to EVERY output, including chat:
 - Straight quotes `"` `'`, not curly.
 - Active voice, plain copulas. No AI-vocabulary clusters (delve, robust, leverage, showcase, pivotal, tapestry).
 - No chatbot chatter or filler. For a full deslop pass on a deliverable, `!cast noslop`.
+
+Grounding - apply to claims about Grimoire content:
+- Every factual claim carries a source tag: `[grimoire: file]` - read from disk this session; `[knowledge]` - from the model, not the user's files; `[guess]` - inference, unverified.
+- A path, file name, or number - verify by grep or read first, then assert.
+- Tag mismatch is a drift signal: `[knowledge]` or `[guess]` where `[grimoire]` was expected is an early siren that the engine is reciting from memory instead of opening the book. Tags are compact and do not break the persona's voice. limits.md outranks all.
 ~~~
 
 ---
@@ -673,6 +681,8 @@ Create `.claude/settings.json`:
       "Write(limits.md)",
       "Edit(commands.md)",
       "Write(commands.md)",
+      "Edit(CLAUDE.md)",
+      "Write(CLAUDE.md)",
       "Edit(.claude/settings.json)",
       "Write(.claude/settings.json)",
       "Edit(.claude/settings.local.json)",
@@ -712,6 +722,7 @@ Why this shape (the perimeter is the point, not decoration):
 
 - **`Bash` is denied wholesale.** A deny on `Edit`/`Write` for a file is only a real lock while the engine has no general code-execution primitive. With Bash available, the engine can write any file (python, redirection, `mv`) and walk straight around the deny list. Removing Bash turns the deny list into a wall. The LaC commands run on native gated tools instead: `!search`→Grep, `!tree`→Glob, `!save`→Write/Edit, dumps→Read. File moves and deletes hand off to the user's terminal (see "Filesystem moves" in commands.md).
 - **The lock list covers its own enforcers.** `settings.json` denies edits to itself, to `settings.local.json` (which can define hooks - an escape hatch), and to `no-slop-scan.py` (which the PostToolUse hook executes - editing it would be code execution). Without these, each is a way back to writing the locked files.
+- **`CLAUDE.md` is locked too.** The boot ritual is denied as well, and `llm_compose.md` lists `CLAUDE.md` and the whole `.claude` folder at L1. An engine that can rewrite its own constitution can lift any lock from inside, so the boot file is immutable - changes go through the administrator.
 - **`SessionStart` forces the boot.** The hook injects the startup ritual every session, so entering LaC mode no longer depends on the model choosing to read CLAUDE.md. It is an inline `echo`, not a script file, so there is nothing editable to subvert.
 - **`PostToolUse` runs the deslop guard.** A warn-only invisible-character scan on every Write/Edit (Step 9b). It never blocks and always exits 0.
 

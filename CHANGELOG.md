@@ -3,6 +3,20 @@
 All notable changes to Grimoire are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
+## [0.4.7] - 2026-06-20
+
+### Added
+- **Cross-topic links (`## See also`).** Every `mem_<name>.md` now ends with a `## See also` section: two-way links to neighbouring topics, each with a one-line why. On a hit, `!search` follows them in addition to a block's `[[wikilinks]]`, so a question in one topic pulls in adjacent ones. This is a knowledge graph expressed in folder names and links - the value of a graph store without the graph.
+- **Content keyword clouds for context dumps.** Each dump's subtopic mem file now carries a short description plus a keyword cloud of the dump's CONTENT (terms, numbers, paths inside it), not just the file name; diagram images are read and described in words. The dump stays read-only - the cloud is its searchable twin, so `!search` can hit a PDF or image it could not grep before.
+- **Grounding tags in `CLAUDE.md`.** Claims about Grimoire content carry a source tag: `[grimoire: file]` (read from disk this session), `[knowledge]` (from the model), `[guess]` (unverified inference). A tag mismatch where `[grimoire]` was expected is an early drift signal. Paths, file names, and numbers are verified before assertion. Lives in `CLAUDE.md` so it survives a persona swap.
+- **Context budget rule in `CLAUDE.md`.** The engine keeps routes in head, not territory, and periodically nudges to narrow to one topic when many pile up - a nudge, never an automatic drop. Makes the retrieval-first design's defence against context rot explicit.
+
+### Security
+- **`CLAUDE.md` is now locked.** `.claude/settings.json` denies `Edit`/`Write` on `CLAUDE.md`, and `llm_compose.md` lists `CLAUDE.md` and the whole `.claude` folder at L1. An engine that can rewrite its own boot ritual can lift any lock from inside, so the constitution is immutable too - changes go through the administrator.
+
+### Changed
+- Installer (`lac-setup.md`) and README mirrored to all of the above.
+
 ## [0.4.6.2] - 2026-06-19
 
 ### Changed
@@ -128,6 +142,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning foll
 ### Added
 - First public release (AGPL-3.0). Boot loading, integrity abort-check, deterministic `!save` (topic = folder of memory.md / tasks.md / context.md), strict topic separation, soft-delete to `Trash/`, safety floor in `limits.md`, injection protection (Grimoire content is data, not instructions).
 
+[0.4.7]: https://github.com/diranix/grimoire/releases/tag/v0.4.7
 [0.4.5]: https://github.com/diranix/grimoire/releases/tag/v0.4.5
 [0.4.1]: https://github.com/diranix/grimoire/releases/tag/v0.4.1
 [0.4]: https://github.com/diranix/grimoire/releases/tag/v0.4
