@@ -3,6 +3,11 @@
 All notable changes to Grimoire are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
+## [0.4.7.1] - 2026-06-20
+
+### Changed
+- **Context budget rule hardened (`CLAUDE.md`).** The budget rule now states the constraint plainly: the context window only grows and the engine cannot evict what it has read, so the only levers are reading less and warning in time. Prevention: dumps are read only on request (with a size warning first on large files), and a file already read this session is never re-read except on request - the engine cannot tell which lines are new without reading the whole file, so it does not fake selective re-reading. Warnings (signal only, never an automatic drop): when many topics pile up in head it suggests `!save` plus a fresh session; when a single topic grows heavy it suggests `!save` + a fresh session or `!cleanup` to split it. The `!load` / `!search` mechanics stay in `commands.md` and are no longer duplicated in the budget rule. README mirrored.
+
 ## [0.4.7] - 2026-06-20
 
 ### Added

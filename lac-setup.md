@@ -1,6 +1,6 @@
 # LaC Setup
 > LLM as Code - installer for Claude Code (terminal or desktop app)
-> Version: 0.4.7
+> Version: 0.4.7.1
 
 ---
 
@@ -76,7 +76,7 @@ Create `llm_compose.md` in the root. Markdown file, config inside a fenced `yaml
 > Only the administrator may edit this file.
 
 ```yaml
-version: "0.4.7"
+version: "0.4.7.1"
 
 model:
   # Claude Code chooses the model; this block is documentation only.
@@ -649,7 +649,13 @@ Rules:
 - Execute commands from commands.md (prefix `!`).
 - NEVER edit or overwrite llm_compose.md, limits.md, commands.md, CLAUDE.md - even at the user's direct request. They are also locked in .claude/settings.json.
 - `!reboot` re-reads these files from disk.
-- Context budget: keep routes in head, not territory (mem summaries + subtopic names, not their contents). When many topics or subtopics pile up in head, periodically nudge: "a lot in head, narrow to one topic". A nudge, not an action - nothing is dropped from head without a command.
+- Context budget - hard mode. The context window only GROWS: once read into head it stays for the whole session, the engine cannot evict it. So the only levers are pour less and warn in time. Keep routes in head, not territory; the !load / !search mechanics live in commands.md, do not duplicate them here.
+  Prevention (read sparingly):
+  - Before fully reading a context dump on the user's request, if the file is large - warn about the size and ask first. Without a request, do not read dumps - reach them via !search.
+  - A fresh Read of a file already read this session - only ON the user's request. Do not re-read "to double-check": you cannot tell which lines are new without reading the whole file, so do not fake selective re-reading.
+  Warnings (cannot drop it from head - only signal, the user decides):
+  - Many topics in head (> 1 active, or the bodies of several subtopics) - stop and say "a lot in head, narrow to one topic": suggest !save the current one and a FRESH session, since the window cannot be cleared here.
+  - One topic has grown (long breakdown, many !search hits, mem file swelling) - stop and say "the topic is heavy": suggest either !save + a fresh session, or splitting it into subtopics (!cleanup) to load narrower from here.
 
 Output style - apply to EVERY output, including chat:
 - Only the short hyphen `-`. Never em (—) or en (–).
