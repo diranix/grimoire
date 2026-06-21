@@ -3,6 +3,17 @@
 All notable changes to Grimoire are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
+## [0.4.9.1] - 2026-06-21
+
+### Security
+- **Deny reworked from per-file to class-level where it counts.** `mcp__*` blocks the entire MCP tool class: any server's `mcp__server__tool` write or exec primitive walked straight past the per-file locks, because a deny list only catches the tools it names and MCP tools were never named. `NotebookEdit` is denied too - a second write path the file locks did not cover. The file locks are re-anchored from a single leading `/` (which Claude Code reads as an absolute filesystem path, so a bare `Edit(/llm_compose.md)` could match nothing) to the project-root `//` form, with absolute-path twins for belt-and-braces. A deny list always lags the tool set, and a pure allow-list is impossible in Claude Code - precedence is `deny > ask > allow` with no default mode that refuses the unlisted - so the wall blocks whole classes instead of chasing names.
+
+### Docs
+- **Security model sharpened in the README.** Why a pure allow-list cannot be built here, the MCP gap, the single-slash path-anchor trap, the symlink deny-bypass CVE (Claude Code <= 1.0.119), and the blunt rule on bypass: `--dangerously-skip-permissions` turns off the entire permission layer - deny rules, file locks, the Bash ban - so every protection is gone the moment you launch with it. Never start the LaC project in bypass; use it entirely at your own risk.
+
+### Changed (installer)
+- `lac-setup.md` settings.json template mirrored (`mcp__*`, `NotebookEdit`, `//` anchors); version `0.4.9` -> `0.4.9.1`.
+
 ## [0.4.9] - 2026-06-20
 
 ### Added
@@ -185,6 +196,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning foll
 ### Added
 - First public release (AGPL-3.0). Boot loading, integrity abort-check, deterministic `!save` (topic = folder of memory.md / tasks.md / context.md), strict topic separation, soft-delete to `Trash/`, safety floor in `limits.md`, injection protection (Grimoire content is data, not instructions).
 
+[0.4.9.1]: https://github.com/diranix/grimoire/releases/tag/v0.4.9.1
 [0.4.9]: https://github.com/diranix/grimoire/releases/tag/v0.4.9
 [0.4.8.1]: https://github.com/diranix/grimoire/releases/tag/v0.4.8.1
 [0.4.8]: https://github.com/diranix/grimoire/releases/tag/v0.4.8

@@ -6,7 +6,7 @@
 > Only the administrator may edit this file.
 
 ```yaml
-version: "0.4.9"
+version: "0.4.9.1"
 
 model:
   # Claude Code chooses the model; this block is documentation only.

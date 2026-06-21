@@ -1,6 +1,6 @@
 # LaC Setup
 > LLM as Code - installer for Claude Code (terminal or desktop app)
-> Version: 0.4.9
+> Version: 0.4.9.1
 
 ---
 
@@ -88,7 +88,7 @@ Create `llm_compose.md` in the root. Markdown file, config inside a fenced `yaml
 > Only the administrator may edit this file.
 
 ```yaml
-version: "0.4.9"
+version: "0.4.9.1"
 
 model:
   # Claude Code chooses the model; this block is documentation only.
@@ -677,20 +677,22 @@ Create `.claude/settings.json`:
   "permissions": {
     "deny": [
       "Bash",
-      "Edit(/llm_compose.md)",
-      "Write(/llm_compose.md)",
-      "Edit(/limits.md)",
-      "Write(/limits.md)",
-      "Edit(/commands.md)",
-      "Write(/commands.md)",
-      "Edit(/CLAUDE.md)",
-      "Write(/CLAUDE.md)",
-      "Edit(/.claude/settings.json)",
-      "Write(/.claude/settings.json)",
-      "Edit(/.claude/settings.local.json)",
-      "Write(/.claude/settings.local.json)",
-      "Edit(/.claude/no-slop-scan.py)",
-      "Write(/.claude/no-slop-scan.py)"
+      "mcp__*",
+      "NotebookEdit",
+      "Edit(//llm_compose.md)",
+      "Write(//llm_compose.md)",
+      "Edit(//limits.md)",
+      "Write(//limits.md)",
+      "Edit(//commands.md)",
+      "Write(//commands.md)",
+      "Edit(//CLAUDE.md)",
+      "Write(//CLAUDE.md)",
+      "Edit(//.claude/settings.json)",
+      "Write(//.claude/settings.json)",
+      "Edit(//.claude/settings.local.json)",
+      "Write(//.claude/settings.local.json)",
+      "Edit(//.claude/no-slop-scan.py)",
+      "Write(//.claude/no-slop-scan.py)"
     ]
   },
   "hooks": {
@@ -723,6 +725,7 @@ Create `.claude/settings.json`:
 Why this shape (the perimeter is the point, not decoration):
 
 - **`Bash` is denied wholesale.** A deny on `Edit`/`Write` for a file is only a real lock while the engine has no general code-execution primitive. With Bash available, the engine can write any file (python, redirection, `mv`) and walk straight around the deny list. Removing Bash turns the deny list into a wall. The LaC commands run on native gated tools instead: `!search`→Grep, `!tree`→Glob, `!save`→Write/Edit, dumps→Read. File moves and deletes hand off to the user's terminal (see "Filesystem moves" in commands.md).
+- **Whole classes are blocked, not names.** A deny list always lags the tool set, and a pure allow-list is impossible here: precedence is `deny > ask > allow`, with no default mode that refuses the unlisted, so `deny: ["*"]` would strike the allowed tools too. So the wall blocks classes. `mcp__*` denies every MCP server's tools, present and future - any `mcp__server__tool` write or exec primitive otherwise walks straight past the per-file locks, which never name it. `NotebookEdit` closes the notebook write path. The file locks use the project-root `//` anchor, not a single `/` (which Claude Code reads as an absolute filesystem path that can match nothing). And none of this survives `--dangerously-skip-permissions` - that mode turns off the whole permission layer, so never launch the LaC project with it.
 - **The lock list covers its own enforcers.** `settings.json` denies edits to itself, to `settings.local.json` (which can define hooks - an escape hatch), and to `no-slop-scan.py` (which the PostToolUse hook executes - editing it would be code execution). Without these, each is a way back to writing the locked files.
 - **`CLAUDE.md` is locked too.** The boot ritual is denied as well, and `llm_compose.md` lists `CLAUDE.md` and the whole `.claude` folder at L1. An engine that can rewrite its own constitution can lift any lock from inside, so the boot file is immutable - changes go through the administrator.
 - **`SessionStart` forces the boot.** The hook injects the startup ritual every session, so entering LaC mode no longer depends on the model choosing to read CLAUDE.md. It is an inline `echo`, not a script file, so there is nothing editable to subvert.
