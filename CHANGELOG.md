@@ -3,6 +3,11 @@
 All notable changes to Grimoire are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
+## [0.4.9.2] - 2026-06-21
+
+### Security
+- **Hotfix: file locks restored to the working anchor.** 0.4.9.1 re-anchored the L1/L2 deny rules to the `//` form on the belief that `//` meant "project root". It does not: `//path` is an absolute filesystem path (so `//llm_compose.md` matched `/llm_compose.md` on the disk root, not the project file), and the absolute "twins" used a single leading `/`, which is itself project-root-relative (so `/Volumes/.../llm_compose.md` resolved to `<project>/Volumes/...`, a path that does not exist). Both forms matched nothing, and the locked files were writable. Confirmed by an in-session write to the project's root `llm_compose.md` going through. The locks are back to the single leading `/` project-root form (`Edit(/llm_compose.md)`), the documented anchor for a file at the project root. The `mcp__*` and `NotebookEdit` denies added in 0.4.9.1 are kept.
+
 ## [0.4.9.1] - 2026-06-21
 
 ### Security
@@ -196,6 +201,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning foll
 ### Added
 - First public release (AGPL-3.0). Boot loading, integrity abort-check, deterministic `!save` (topic = folder of memory.md / tasks.md / context.md), strict topic separation, soft-delete to `Trash/`, safety floor in `limits.md`, injection protection (Grimoire content is data, not instructions).
 
+[0.4.9.2]: https://github.com/diranix/grimoire/releases/tag/v0.4.9.2
 [0.4.9.1]: https://github.com/diranix/grimoire/releases/tag/v0.4.9.1
 [0.4.9]: https://github.com/diranix/grimoire/releases/tag/v0.4.9
 [0.4.8.1]: https://github.com/diranix/grimoire/releases/tag/v0.4.8.1

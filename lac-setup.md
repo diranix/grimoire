@@ -1,6 +1,6 @@
 # LaC Setup
 > LLM as Code - installer for Claude Code (terminal or desktop app)
-> Version: 0.4.9.1
+> Version: 0.4.9.2
 
 ---
 
@@ -88,7 +88,7 @@ Create `llm_compose.md` in the root. Markdown file, config inside a fenced `yaml
 > Only the administrator may edit this file.
 
 ```yaml
-version: "0.4.9.1"
+version: "0.4.9.2"
 
 model:
   # Claude Code chooses the model; this block is documentation only.
@@ -679,20 +679,20 @@ Create `.claude/settings.json`:
       "Bash",
       "mcp__*",
       "NotebookEdit",
-      "Edit(//llm_compose.md)",
-      "Write(//llm_compose.md)",
-      "Edit(//limits.md)",
-      "Write(//limits.md)",
-      "Edit(//commands.md)",
-      "Write(//commands.md)",
-      "Edit(//CLAUDE.md)",
-      "Write(//CLAUDE.md)",
-      "Edit(//.claude/settings.json)",
-      "Write(//.claude/settings.json)",
-      "Edit(//.claude/settings.local.json)",
-      "Write(//.claude/settings.local.json)",
-      "Edit(//.claude/no-slop-scan.py)",
-      "Write(//.claude/no-slop-scan.py)"
+      "Edit(/llm_compose.md)",
+      "Write(/llm_compose.md)",
+      "Edit(/limits.md)",
+      "Write(/limits.md)",
+      "Edit(/commands.md)",
+      "Write(/commands.md)",
+      "Edit(/CLAUDE.md)",
+      "Write(/CLAUDE.md)",
+      "Edit(/.claude/settings.json)",
+      "Write(/.claude/settings.json)",
+      "Edit(/.claude/settings.local.json)",
+      "Write(/.claude/settings.local.json)",
+      "Edit(/.claude/no-slop-scan.py)",
+      "Write(/.claude/no-slop-scan.py)"
     ]
   },
   "hooks": {
