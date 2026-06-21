@@ -3,6 +3,11 @@
 All notable changes to Grimoire are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
+## [0.4.9.3] - 2026-06-21
+
+### Added
+- **Grounding rule: search before you assert about the outside world.** `CLAUDE.md` grows one rule in the Grounding block: when the model's own knowledge does not cover a factual question about something external (a tool, product, event, version), the engine does not guess - it web-searches first, then asserts. A `[guess]` in place of an available search, where the fact is verifiable, is an error rather than an acceptable state. This closes a gap where the engine would answer confidently about an unknown external thing instead of admitting the empty index and reaching for the web. Mirrored in the `lac-setup.md` CLAUDE.md template.
+
 ## [0.4.9.2] - 2026-06-21
 
 ### Security

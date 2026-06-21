@@ -88,7 +88,7 @@ Create `llm_compose.md` in the root. Markdown file, config inside a fenced `yaml
 > Only the administrator may edit this file.
 
 ```yaml
-version: "0.4.9.2"
+version: "0.4.9.3"
 
 model:
   # Claude Code chooses the model; this block is documentation only.
@@ -664,6 +664,7 @@ Grounding - apply to claims about Grimoire content:
 - Every factual claim carries a source tag: `[grimoire: file]` - read from disk this session; `[knowledge]` - from the model, not the user's files; `[guess]` - inference, unverified.
 - A path, file name, or number - verify by grep or read first, then assert.
 - Tag mismatch is a drift signal: `[knowledge]` or `[guess]` where `[grimoire]` was expected is an early siren that the engine is reciting from memory instead of opening the book. Tags are compact and do not break the persona's voice. limits.md outranks all.
+- If the model's knowledge does not cover a factual question about the outside world (a tool, product, event, version) - do not guess. Web-search first, then assert. A `[guess]` in place of a search where the fact is verifiable is an error, not an acceptable state.
 ~~~
 
 ---
