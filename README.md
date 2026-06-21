@@ -20,8 +20,8 @@ Four layers plus a persistent file store (the Grimoire):
 - `llm_compose.md` (L1) - entry point. Defines levels, context, and paths. Immutable, alongside `limits.md`. Loaded automatically every session via `CLAUDE.md`.
 - `limits.md` (L1) - immutable rules. The safety and integrity floor.
 - `commands.md` (L2) - the command set: `!reboot`, `!save`, `!load`, `!search`, `!cast`, `!tree`, `!cleanup`, `!compress`, and more.
-- `personas/` (L3) - the engine's personalities, one file per persona (`<name>_persona.md`). The active one is whichever `llm_compose.md` points to - swap by repointing. Since the active persona loads every session, it's also where you record *your own* in-world identity for roleplay (how you're addressed, backstory, relationships) - the engine then knows it from the first message, no `!load` needed.
-- `spells/` (L3) - on-demand behavior modules. `!cast <name>` loads a spell (its main file plus any references) into the session and applies it until you start a fresh one; `!spells` lists what you have. A spell shapes how the engine acts, but `limits.md` still outranks it. One ships bundled: **`noslop`** (`!cast noslop`), a deslop pass that strips machine-generated tells out of prose before you ship a deliverable.
+- `personas/` (L3) - the engine's personalities, one file per persona (`<name>_persona.md`). The active one is whichever `llm_compose.md` points to - swap by repointing. The bundled default ships plain and neutral on purpose, a blank slate you replace with a character of your own. Since the active persona loads every session, it is also where you record *your own* in-world identity for roleplay (how you're addressed, backstory, relationships) - the engine then knows it from the first message, no `!load` needed.
+- `spells/` (L3) - the official add-on layer. A spell is behavior, not data: its main file defines *how* the engine acts, not what it knows. `!cast <name>` loads a spell (its main file plus any references) into the session and applies it until you start a fresh one; `!spells` lists what you have. This is how you extend or specialize the engine without touching the core files - write a spell, share it, or install one from someone else. `limits.md` (L1) still outranks any spell: it cannot lift a file lock or the safety floor. One ships bundled: **`noslop`** (`!cast noslop`), a deslop pass that strips machine-generated tells out of prose before you ship a deliverable.
 - `grimoire/` - persistent memory, organized into topic folders. A topic may nest subtopic folders (each with its own memory file plus any context dumps), so you can load or search one facet of a topic without pulling the rest.
 
 On boot the engine also scans `grimoire/` and loads its folder tree (directory names only). Knowing the existing topics up front lets the LLM route a conversation into an already-existing folder on `!save` instead of spawning near-duplicate topics.
@@ -36,18 +36,41 @@ To keep memory tidy and token usage in check, two separate commands maintain the
 
 Locked files - `llm_compose.md` and `limits.md` (L1, immutable), `commands.md` (L2, admin-only), and `CLAUDE.md` (the boot ritual) - are enforced at the tool level via `.claude/settings.json` deny rules, so the engine cannot overwrite its own governance or rewrite its own constitution - even if asked. The lock holds because `settings.json` also **denies Bash**: a deny on `Edit`/`Write` is only a wall while the engine has no general code-execution primitive to walk around it. With Bash gone, the engine runs its commands on native tools (Grep, Glob, Read, Write, Edit) and hands file moves and deletes to your terminal - so `!delete` proposes a ready `mv` command rather than running it. The deny list also covers its own enforcers (`settings.json`, `settings.local.json`, the guard script) and `CLAUDE.md` itself, and a `SessionStart` hook forces the boot ritual every session so entering LaC mode does not depend on the model's goodwill.
 
+Know the limit of this lock. The deny rules and the hooks are Claude Code mechanisms, not OS-level enforcement. If Claude Code changes how it matches deny rules, or adds a new write primitive (some future `MultiEdit` or equivalent), that primitive does not fall under the existing matchers on its own - the lock silently stops covering it, and no test or CI flags the gap. Treat the deny layer as a strong default, not a guarantee. For a lock the engine cannot lift even in principle, set the OS immutable flag on the L1/L2 files (`chflags uchg` on macOS, `chattr +i` on Linux), removed by hand for a deliberate edit.
+
 ## Requirements
 
 - **Claude Code** (terminal CLI or the desktop app - both work)
+- **Opus 4.8 recommended.** LaC asks the model to hold a strict protocol on every turn - the boot ritual, command parsing, grounding tags, the locks. Opus 4.8 holds it best; weaker or older models follow it less reliably and the engine drifts. A recommendation, not a hard requirement.
 - A dedicated folder for LaC, opened as your Claude Code project (that folder is the LaC root)
 
 That's it. No Docker, no MCP filesystem server, no client memory hook. `python3` is optional - it powers the warn-only invisible-character guard; if it is absent, the guard simply does nothing and everything else works.
 
 ## Install
 
-Hand `lac-setup.md` to Claude Code in your LaC folder and tell it to execute the file. It builds the structure, writes `CLAUDE.md` (the auto-boot file), and locks the immutable layer. Full steps live inside `lac-setup.md`.
+Open an empty folder as a Claude Code project (terminal: `cd` in and run `claude`, or the desktop app with the folder open). Paste this link into the chat and say **install**:
 
-After install, open that folder **as a Claude Code project** (terminal `cd` + `claude`, the desktop app with the folder open, or an IDE window rooted there) and start a session - it enters LaC mode on its own. The boot lives in `CLAUDE.md` plus a `SessionStart` hook, and both run only inside a project session for this folder. A generic Cowork or assistant chat that has not opened the folder will not load `CLAUDE.md` or fire the hook, so it stays an ordinary assistant - no boot line, no persona, no commands. Use `!reboot` to refresh after editing LaC files outside the session.
+```
+https://raw.githubusercontent.com/diranix/grimoire/main/lac-setup.md
+```
+
+Claude Code reads `lac-setup.md` and runs it. It asks once for your admin name, then builds the whole structure from the templates inside that file: the four governance files, the `.claude/` lock and hooks, a neutral default persona, the bundled `noslop` spell, and an empty `grimoire/`. Everything is written locally; nothing leaves your machine.
+
+The installer is idempotent. Run it again on a folder that already has LaC and it refreshes the engine files while leaving your data alone - it never overwrites `grimoire/`, `core.md`, your admin name, or your active persona.
+
+After install, start a fresh session in the same folder and it enters LaC mode on its own. The boot lives in `CLAUDE.md` and a `SessionStart` hook, both of which run only inside a Claude Code project session for this folder. A generic Cowork or assistant chat that has not opened the folder stays an ordinary assistant - no boot line, no persona, no commands. Run `!reboot` to reload after you edit a LaC file outside the session.
+
+## Updating
+
+Run `!update` in a LaC session. It reads your local version, fetches the latest version and CHANGELOG from the repo, and shows what changed - all read-only, nothing written. If you are already current, it says so and stops.
+
+If a newer version exists and you confirm, the engine hands you one terminal command. It cannot apply the update itself: `.claude/settings.json` denies Bash and locks the L1/L2 files, so the engine has no way to rewrite its own governance - the same wall that stops a misbehaving agent stops the updater. The command fetches `lac-update.sh` from the repo and runs it in your shell, outside that wall, where it can refresh the locked files.
+
+`lac-update.sh` is careful by design. It refreshes only LaC's own engine files (`limits.md`, `commands.md`, `CLAUDE.md`, `.claude/settings.json`, `.claude/no-slop-scan.py`) and bumps the version line in `llm_compose.md`, keeping your admin name and persona pointer. It never touches `grimoire/`, `personas/`, or `spells/`, so your notes, your active persona, and your own spells survive. It copies every replaced file to `grimoire/Trash/` first. When it finishes, run `!reboot`.
+
+### Keep your Grimoire private
+
+Your `grimoire/` folder holds personal context - name, location, server IPs, plans. The public repo ships only LaC's own files (the installer, the engine files, the updater), never your notes, so installing from the link publishes nothing of yours. The risk is on you only if you put your own Grimoire under Git: keep that repository **private**, or add `grimoire/` (and any persona file with personal details) to `.gitignore` before the first push. The installer does not do this for you.
 
 ## Author
 

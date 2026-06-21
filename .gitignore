@@ -1,9 +1,15 @@
-# Ignore everything by default
+# Ship only the LaC files, ignore everything else.
 *
-
-# Allow only these
-!.gitignore
-!lac-setup.md
-!LICENSE
-!README.md
-!CHANGELOG.md
+!*/
+!/.gitignore
+!/LICENSE
+!/README.md
+!/CHANGELOG.md
+!/lac-setup.md
+!/lac-update.sh
+!/llm_compose.md
+!/limits.md
+!/commands.md
+!/CLAUDE.md
+!/.claude/settings.json
+!/.claude/no-slop-scan.py

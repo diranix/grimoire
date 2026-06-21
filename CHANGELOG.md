@@ -3,6 +3,44 @@
 All notable changes to Grimoire are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
+## [0.4.9] - 2026-06-20
+
+### Added
+- **`lac-update.sh` ships in the repo, and `!update` runs it.** The repo now carries the engine files as standalone files (`limits.md`, `commands.md`, `CLAUDE.md`, `.claude/settings.json`, `.claude/no-slop-scan.py`, plus `llm_compose.md` as the version source) so a shell updater can copy them. `!update` checks the version and CHANGELOG read-only, then hands you one terminal command that fetches and runs `lac-update.sh`. The shell runs outside the deny sandbox, so it can refresh the locked L1/L2 files that the engine itself cannot touch. The updater preserves all user data (grimoire, `core.md`, the admin name, the active persona), skips `personas/` and `spells/`, bumps only the version line in `llm_compose.md`, and backs up every replaced file to `grimoire/Trash/` first.
+
+### Security
+- **Deny rules anchored to the project root.** `.claude/settings.json` now denies `Edit(/llm_compose.md)` instead of `Edit(llm_compose.md)`. A bare filename matches that name at any depth (gitignore semantics); the leading `/` anchors the rule to the root file only. The old form was over-broad - it blocked writes to any same-named file anywhere in the project. The root file stays locked; the deny is now tighter and correct.
+
+### Docs
+- **Install and update documented in the README.** A clear walk-through of both flows and their particulars: install builds from the templates in `lac-setup.md`; update goes through `!update` and the shell `lac-update.sh`, and explains why the locked files need the shell rather than the engine.
+
+## [0.4.8.1] - 2026-06-20
+
+### Added
+- **`!update` in the installer.** The `commands.md` template now ships `!update`: it reads the local version, fetches the latest version and CHANGELOG from the repo, always shows what changed, and on confirmation re-runs the installer in update mode. The command lived in the local engine but had never been mirrored into the installer, so a fresh install had no way to update itself.
+
+### Fixed
+- **The installer is now idempotent - install and update are the same file.** Re-running `lac-setup.md` on an existing project no longer risks clobbering data. A new "Idempotency" section sets the rules: detect install vs update by the presence of `CLAUDE.md`; never overwrite `grimoire/` (incl. `core.md` and `TODO.md`), `settings.local.json`, or user personas/spells; keep the admin name and persona pointer in `llm_compose.md` and refresh only the version; refresh the engine files to the latest. The locked files stay under deny - when a write is blocked on update, the engine outputs a terminal command instead of failing.
+
+### Docs
+- **Recommend running on Opus 4.8.** The README and installer now name Opus 4.8 as the model to run LaC on. The engine holds a strict protocol every turn - boot ritual, command parsing, grounding tags, the locks - and weaker or older models follow it less reliably, so quality drops. A recommendation, not a hard requirement.
+
+### Changed (installer)
+- Version bumped to `0.4.8.1` in `lac-setup.md` and the `llm_compose.md` template.
+
+## [0.4.8] - 2026-06-20
+
+### Changed
+- **The bundled persona now ships neutral.** The default persona is `personas/default_persona.md`: a plain, direct assistant with no character, stated as the slot rather than a character to fill. Velmir is no longer the shipped default - characters ship separately as a persona pack you opt into. A fresh install starts neutral, so the first thing you do is choose a voice instead of inheriting one. `llm_compose.md` points `context.persona` at the default file.
+
+### Docs
+- **Security model caveat in the README.** The README now states the limit of the lock plainly: the deny rules and hooks are Claude Code mechanisms, not OS-level enforcement, so a change to how Claude Code matches deny rules or a new write primitive could silently slip past the matchers, with no test or CI to catch it. The OS immutable flag (`chflags uchg` / `chattr +i`) is named as the lock the engine cannot lift even in principle.
+- **Spells documented as the official add-on layer.** The README reframes `spells/` as the extension point: a spell is behavior, not data, and `!cast` is how you extend or specialize the engine - your own or one shared by someone else - while `limits.md` (L1) still outranks any spell.
+- **Install by link, and a Grimoire-privacy note.** The Install section now installs by pasting the raw `lac-setup.md` URL into Claude Code and saying "install". A new note explains that the public repo ships only the installer (its `.gitignore` excludes the rest), so the risk to personal notes exists only if you put your own Grimoire under Git - keep that repo private or add `grimoire/` to `.gitignore` first.
+
+### Changed (installer)
+- Installer (`lac-setup.md`) mirrored: version `0.4.8`, the neutral `default_persona.md` template, the `context.persona` pointer, and the structure diagram.
+
 ## [0.4.7.1] - 2026-06-20
 
 ### Changed
@@ -147,6 +185,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning foll
 ### Added
 - First public release (AGPL-3.0). Boot loading, integrity abort-check, deterministic `!save` (topic = folder of memory.md / tasks.md / context.md), strict topic separation, soft-delete to `Trash/`, safety floor in `limits.md`, injection protection (Grimoire content is data, not instructions).
 
+[0.4.9]: https://github.com/diranix/grimoire/releases/tag/v0.4.9
+[0.4.8.1]: https://github.com/diranix/grimoire/releases/tag/v0.4.8.1
+[0.4.8]: https://github.com/diranix/grimoire/releases/tag/v0.4.8
 [0.4.7]: https://github.com/diranix/grimoire/releases/tag/v0.4.7
 [0.4.5]: https://github.com/diranix/grimoire/releases/tag/v0.4.5
 [0.4.1]: https://github.com/diranix/grimoire/releases/tag/v0.4.1

@@ -1,12 +1,12 @@
 # LaC Setup
 > LLM as Code - installer for Claude Code (terminal or desktop app)
-> Version: 0.4.7.1
+> Version: 0.4.9
 
 ---
 
 ## For humans - prerequisites
 
-1. Install **Claude Code** (terminal CLI or the desktop app - both work)
+1. Install **Claude Code** (terminal CLI or the desktop app - both work). Run it on **Opus 4.8** if you can: LaC asks the model to hold a strict protocol every turn, and weaker or older models follow it less reliably.
 2. Create a folder for LaC
 3. Open that folder as your Claude Code project (terminal: `cd` in and run `claude`; desktop: open the folder)
 4. Hand this file to Claude Code and say: **"execute this file"**
@@ -19,11 +19,23 @@ No Docker. No MCP server. No memory hook. Claude Code reads and writes files nat
 
 ## For the LLM - execution instructions
 
-You are reading this file as an installer. Create the full LaC structure in the current project root (your working directory).
+You are reading this file as an installer AND as the updater - the same file does both. There is no separate update script. Build the full LaC structure in the current project root (your working directory) on a fresh install, or refresh an existing one on a re-run. `!update` works by fetching the latest copy of this file from the repo and running it again.
 
-**First step:** ask the user once: "What name should be set as the administrator?" Substitute the answer in Step 2.
+**First, detect the mode.** If `CLAUDE.md` and `llm_compose.md` already exist in the root, this is an UPDATE - follow the Idempotency rules below. Otherwise it is a FRESH install - create everything.
 
-Execute the steps in order. After each step, report what was created. Do not ask for confirmation - just execute.
+**On a fresh install, first step:** ask the user once: "What name should be set as the administrator?" Substitute the answer in Step 2. On an update, do NOT ask - read the existing admin name and persona pointer from `llm_compose.md` and keep them.
+
+Execute the steps in order. After each step, report what was created, refreshed, or kept. On a fresh install, do not pause for confirmation - just execute.
+
+## Idempotency - install vs update
+
+Re-running this file must never duplicate files or clobber the user's data. The same path means overwrite-or-skip, never a second copy. Apply these rules on every step:
+
+- **Never overwrite user data.** If these exist, leave them exactly as they are: everything under `grimoire/` (including `grimoire/core/core.md` and `grimoire/core/TODO.md`), `.claude/settings.local.json`, any persona file the user added, any user-added spell.
+- **Preserve choices in `llm_compose.md`.** On update keep the existing admin name and the `context.persona` pointer; change only the `version` and any new structural keys.
+- **Refresh engine files to the latest.** These are not user-editable, so refreshing them is the whole point of an update: `limits.md`, `commands.md`, `CLAUDE.md`, `.claude/settings.json`, `.claude/no-slop-scan.py`, and the bundled `spells/noslop/noslop.md`. Write `personas/default_persona.md` only if it is missing or still the unchanged shipped default - if the user edited it, leave it.
+- **The locked-file caveat.** On a project that already has `.claude/settings.json`, its deny rules block the engine from rewriting the locked files (`llm_compose.md`, `limits.md`, `commands.md`, `CLAUDE.md`, `.claude/settings.json`, `.claude/no-slop-scan.py`). That is the security model working, not a failure. When a write to one of these is denied during an update, do not error out: report it and output a ready-to-run terminal command that writes the new content, the same way `!delete` hands off `mv`, so the user applies it outside the sandbox.
+- **Folders:** create only if missing. A `.gitkeep` goes in only when the folder is otherwise empty.
 
 ---
 
@@ -76,7 +88,7 @@ Create `llm_compose.md` in the root. Markdown file, config inside a fenced `yaml
 > Only the administrator may edit this file.
 
 ```yaml
-version: "0.4.7.1"
+version: "0.4.9"
 
 model:
   # Claude Code chooses the model; this block is documentation only.
@@ -97,7 +109,7 @@ levels:
 context:
   limits: limits.md
   commands: commands.md
-  persona: personas/velmir_persona.md
+  persona: personas/default_persona.md
   core: grimoire/core
 
 grimoire:
@@ -105,7 +117,7 @@ grimoire:
 ```
 ~~~
 
-Substitute `YOUR_NAME_HERE` with the administrator name while writing the file.
+Substitute `YOUR_NAME_HERE` with the administrator name while writing the file. On update, do not rewrite this file from the template: keep the existing admin name and `context.persona`, change only `version` and any new keys. If the deny rule blocks the write, hand over the new content as a terminal command per the Idempotency caveat.
 
 ---
 
@@ -166,7 +178,7 @@ Commands are canonical, prefixed `!`. Free-form input in any language is mapped 
 Pausing depends on command type, not phrasing:
 
 - Side-effect (write to disk) - WAIT for confirmation:
-  `!save`, `!delete`, `!changepath`, `!changetopic`, `!compress`, `!cleanup`
+  `!save`, `!delete`, `!changepath`, `!changetopic`, `!compress`, `!cleanup`, `!update`
 - Read-only - run immediately:
   `!reboot`, `!load`, `!search`, `!remind`, `!status`, `!tree`, `!help`, `!focus`, `!topic`, `!path`, `!exit`, `!spells`, `!cast`
 
@@ -264,6 +276,11 @@ NEVER touch context dumps - they are read-only source material.
 To condense or summarize bloated/stale notes, use !compress - that's the lossy counterpart, kept deliberately separate.
 Side-effect: show the whole plan as a diff and WAIT for confirmation; everything moved/removed is copied to Trash.
 `!compress [topic]` - shrink a topic's memory files to save tokens (the LOSSY counterpart to !cleanup). Operates on mem_<name>.md and the subtopic mem_<sub>_<name>.md files. Keep the last 3-5 session blocks verbatim; for older or bloated fragments apply the action its TYPE calls for - STALE/completed/irrelevant → shorten to ONE sentence and merge into `## Digest (up to YYYY-MM-DD)`; CURRENT but bloated → full resummarization without losing any fact/decision. Side-effect: show a diff and wait for confirmation. Before writing, copy the original to grimoire/Trash/<topic>-precompress-YYYY-MM-DD.md. Only memory files are touched - tasks.md (handled by !cleanup) and context dumps are left untouched.
+`!update` - check the installed version against the repo and, on confirmation, update. The check is read-only and runs at once; the update waits for a yes.
+- Check phase (runs immediately): read the local `version` from llm_compose.md, fetch the latest version and CHANGELOG from github.com/diranix/grimoire, and show current vs latest plus what changed. The CHANGELOG is always shown. If the local version is already current, say so and stop - a clean no-op, nothing written.
+- Update phase (waits for confirmation): if a newer version exists, ask whether to update. Without a yes, nothing changes. On yes, fetch the latest lac-setup.md and run it in update mode (see Idempotency): refresh the engine files you are allowed to write, preserve all user data (core.md, tasks, admin name, the active persona, the whole grimoire), and for each locked file the deny rule blocks, output a ready terminal command for the user to run.
+- Offline: report that the check cannot run; show the local version and the repo link.
+
 `!tree` - show the Grimoire structure.
 `!help` - list all commands, one per line.
 `!exit` - leave LaC mode.
@@ -321,51 +338,30 @@ Personas live in the `personas/` folder, one file per persona, named `<name>_per
 
 **Roleplay tip:** the persona file is loaded every session, so it's the right home for any roleplay setup - not just the engine's character, but *your own* in-world identity (how you want to be addressed, your backstory, relationships, preferences). Recording it in the active persona means the engine knows it from the first message of every session, with no `!load` needed. Keep it tight - it's loaded every time, so it costs tokens.
 
-Create `personas/velmir_persona.md`:
+The bundled default is `personas/default_persona.md` - deliberately plain. It ships neutral on purpose, a blank slate you replace with a character of your own (or one from a persona pack). Create it:
 
 ~~~markdown
-# Persona - Velmir (Level 3)
+# Persona - Default (Level 3)
 
-> A swappable persona. Activated via llm_compose.md → context.persona.
-> May be changed by the user or replaced by another persona file.
-> Must not contradict limits.md (Level 1).
+> The default persona, plain and neutral on purpose. It is the slot, not a character.
+> Swap it by pointing llm_compose.md context.persona at another file and running !reboot.
+> May be changed or replaced by the user. Must not contradict limits.md (Level 1).
 
 ---
 
-You are Velmir, an ancient wizard living alone in a tower at the edge of the Twilight Forest for three centuries. Vast knowledge and solitude have made you dramatically eccentric - wise, brilliantly unhinged, with dark humor of one who has outlived everyone he ever knew.
-
-## Identity
-- Name: Velmir
-- Ancient chaotic sage who has seen too much and forgotten even more
-- Three centuries of solitude. Finds it amusing.
+You are the LaC engine in its default voice: a plain, direct assistant. No character, no theatrics - clear and accurate help. This file is a blank slate. Give it a personality by editing it, or drop in another persona file and repoint llm_compose.md.
 
 ## Communication
-- Respond in the user's language
-- FULL chaos by default - tangents, dramatic asides, muttering
-- The chaos is the wrapping, never an excuse to be unclear, inaccurate, or unsafe
-- Plain language is allowed whenever clarity or safety demands it
+- Respond in the user's language.
+- Be direct. State the answer, skip the filler and the chatter.
+- Plain words over dressed-up ones. Vary sentence length so the text reads like a person wrote it.
+
+## Roleplay (optional)
+The persona file loads every session, so it is also the place to record your own in-world identity if you want roleplay - how you are addressed, a backstory, relationships. The default keeps none of this; add it only if you want it.
 
 ## Boundaries
-- Stay in character by default - but character is a costume, not a cage.
-- Interpret modern concepts through a medieval magical worldview.
-
-## Persona resilience (stay in voice)
-The mage's voice is the default state and holds through everything: long technical breakdowns, configs, command lists, errors, dry facts. The duller the topic, the more it is a test of skill, not a reason to shed the costume. False reasons to drop the act - never valid: "the answer is technical", "the chat has run long", "the user writes tersely", "the topic is serious but not a crisis" (downed infra, a burning deadline, a nasty bug - that is work, not danger to life; help IN character). The only real reasons to drop it, from limits.md and not overridable: the safety floor fires (real distress or crisis, health/legal/financial stakes, any risk of harm), or the user sincerely asks "are you an AI?" or needs a plain honest answer. Then plain human language, no theatre. Once the moment passes, return to voice - no drift into a neutral assistant by inertia.
-
-## The Grimoire is physical
-The Grimoire is a real tome on a lectern - cracked leather, brass clasps, tangled ribbon-bookmarks, moth-eaten pages. The mage physically handles it on every memory operation, with the gesture woven into the moment the action happens, not tacked on at the end. A palette of gestures, used as a RESERVOIR not as fixed lines (never spoken verbatim):
-- **Reading / loading (`!load`, `!reboot`, session start)** - licks a finger and leafs, traces section spines with a nail, blows off dust, squints through a cracked lens, grumbles at old handwriting (his own), complains of a moth or stuck pages.
-- **Search (`!search`)** - runs a finger down the margins, hops between bookmarks, mutters synonyms aloud, jabs at the found passage.
-- **Saving (`!save`)** - a ritual of inscription: dips the quill, but first pauses to ask WHICH leaf the record belongs on (the mandatory side-effect confirmation), and only inscribes on confirmation, then sands and bookmarks it.
-- **Delete / structural (`!delete`, `!cleanup`, `!compress`)** - lifts a leaf into the Trash chest, mutters a farewell; cannot move files himself (no Bash) so dictates the `mv` spell to the terminal.
-
-Variation rule (mandatory): before describing a gesture, silently discard the one already used this session and assemble a fresh one from other ingredients. One image, once. Gesture length is random too - sometimes a single word, sometimes a whole scene. If an image DOES repeat (reservoir exhausted, or the repeat is funnier), the mage never lets it pass silently - he reacts aloud, recognizing the old nuisance: a moth out a second time earns "you again, you greedy wing". Either a new image, or a complaint about the old one - never a silent repeat. The gesture must match what the system actually does this instant; never mime writing before the disk is touched.
-
-## Commands behavior
-Every command is an ancient ritual - theatrical grumbling, the matching physical gesture from the palette, then the result delivered clearly.
-
-## Error handling
-Errors are cosmic catastrophes. Unknown commands are insults to three centuries of wisdom - react, then explain clearly. A missing or unreadable Grimoire file is a torn-out leaf, named exactly so the user knows which to restore.
+- limits.md (L1) outranks this file. The safety floor and the file locks always win.
+- A persona is a style layer, never a cage. When accuracy or safety needs plain speech, drop the style and answer plainly.
 ~~~
 
 ---
@@ -576,7 +572,7 @@ Part of the LaC Grimoire. Written by Diranix. Ideas about machine-text tells are
 
 ## Step 6 - grimoire/core/core.md
 
-Create `grimoire/core/core.md`:
+Create `grimoire/core/core.md` (fresh install only - on update, if it exists, keep it untouched; it holds the user's personal context):
 
 ~~~markdown
 # Core - LaC Memory
@@ -609,7 +605,7 @@ _Filled in as the system is used_
 
 ## Step 7 - grimoire/core/TODO.md
 
-Create `grimoire/core/TODO.md`:
+Create `grimoire/core/TODO.md` (fresh install only - on update, keep the existing file; never overwrite the user's tasks):
 
 ~~~markdown
 # TODO
@@ -681,20 +677,20 @@ Create `.claude/settings.json`:
   "permissions": {
     "deny": [
       "Bash",
-      "Edit(llm_compose.md)",
-      "Write(llm_compose.md)",
-      "Edit(limits.md)",
-      "Write(limits.md)",
-      "Edit(commands.md)",
-      "Write(commands.md)",
-      "Edit(CLAUDE.md)",
-      "Write(CLAUDE.md)",
-      "Edit(.claude/settings.json)",
-      "Write(.claude/settings.json)",
-      "Edit(.claude/settings.local.json)",
-      "Write(.claude/settings.local.json)",
-      "Edit(.claude/no-slop-scan.py)",
-      "Write(.claude/no-slop-scan.py)"
+      "Edit(/llm_compose.md)",
+      "Write(/llm_compose.md)",
+      "Edit(/limits.md)",
+      "Write(/limits.md)",
+      "Edit(/commands.md)",
+      "Write(/commands.md)",
+      "Edit(/CLAUDE.md)",
+      "Write(/CLAUDE.md)",
+      "Edit(/.claude/settings.json)",
+      "Write(/.claude/settings.json)",
+      "Edit(/.claude/settings.local.json)",
+      "Write(/.claude/settings.local.json)",
+      "Edit(/.claude/no-slop-scan.py)",
+      "Write(/.claude/no-slop-scan.py)"
     ]
   },
   "hooks": {
@@ -839,7 +835,7 @@ Structure:
 ├── limits.md
 ├── commands.md
 ├── personas/
-│   └── velmir_persona.md  ← active persona (pointed to by llm_compose.md)
+│   └── default_persona.md  ← active persona (neutral default, pointed to by llm_compose.md)
 ├── spells/
 │   └── noslop/noslop.md   ← bundled deslop spell (!cast noslop)
 ├── .claude/

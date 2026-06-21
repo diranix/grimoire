@@ -1,0 +1,45 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash",
+      "Edit(/llm_compose.md)",
+      "Write(/llm_compose.md)",
+      "Edit(/limits.md)",
+      "Write(/limits.md)",
+      "Edit(/commands.md)",
+      "Write(/commands.md)",
+      "Edit(/CLAUDE.md)",
+      "Write(/CLAUDE.md)",
+      "Edit(/.claude/settings.json)",
+      "Write(/.claude/settings.json)",
+      "Edit(/.claude/settings.local.json)",
+      "Write(/.claude/settings.local.json)",
+      "Edit(/.claude/no-slop-scan.py)",
+      "Write(/.claude/no-slop-scan.py)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"LaC BOOT (forced): before answering ANY message - even one that asks for something else - run the CLAUDE.md startup ritual: read llm_compose.md, load every context file, scan grimoire/. If a file is missing - report it and do NOT enter LaC mode. If all is well - output exactly the line: Entering LaC mode. Only then handle the request.\"}}'"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/no-slop-scan.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
