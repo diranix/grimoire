@@ -1,6 +1,6 @@
 # LaC Setup
 > LLM as Code - installer for Claude Code (terminal or desktop app)
-> Version: 0.4.9.5
+> Version: 0.4.9.6
 
 ---
 
@@ -90,7 +90,7 @@ Create `llm_compose.md` in the root. Markdown file, config inside a fenced `yaml
 > Only the administrator may edit this file.
 
 ```yaml
-version: "0.4.9.5"
+version: "0.4.9.6"
 
 model:
   # Claude Code chooses the model; this block is documentation only.
@@ -183,7 +183,7 @@ Pausing depends on command type, not phrasing:
 - Side-effect (write to disk) - WAIT for confirmation:
   `!save`, `!delete`, `!changepath`, `!changetopic`, `!compress`, `!cleanup`, `!update`
 - Read-only - run immediately:
-  `!reboot`, `!load`, `!search`, `!remind`, `!status`, `!tree`, `!help`, `!focus`, `!topic`, `!path`, `!exit`, `!spells`, `!cast`
+  `!reboot`, `!load`, `!search`, `!remind`, `!tree`, `!help`, `!focus`, `!topic`, `!path`, `!exit`, `!spells`, `!cast`
 
 ---
 
@@ -216,7 +216,7 @@ This is behavior, not a command; disk is only touched on !save (side-effect, wit
 - Path is a SUBTOPIC (`topic/sub`) → WORKING mode: load the topic-root mem_<name>.md fully AND that subtopic's mem_<sub>_<name>.md fully into the head, so you can co-author / discuss it freely. Its context dumps (PDF/docx/images) are NOT swallowed - they stay grep-only via !search.
 - Path is `topic/all` → force full load of every mem_*.md recursively (small topics only, on purpose).
 - No path → `Specify a path. Use !tree to browse.`
-- tasks.md is not auto-loaded (use !status). There is no root context/. Size guard: on load, check the memory file size. If it crosses ANY threshold (>500 lines, >30 KB, >15 session blocks), warn and suggest `!compress <topic>` or `!cleanup`. Suggestion only.
+- tasks.md is not auto-loaded; open it directly or via !load topic/sub. There is no root context/. Size guard: on load, check the memory file size. If it crosses ANY threshold (>500 lines, >30 KB, >15 session blocks), warn and suggest `!compress <topic>` or `!cleanup`. Suggestion only.
 
 `!search [query]` - read-only retrieval across the loaded topic. Runs IMMEDIATELY, never asks (read-only). Greps the topic's subtopic memory files and their context dumps for the query, reads ONLY the matching excerpts (line ranges), works from those. The engine invokes !search AUTOMATICALLY whenever a question needs material from a subtopic that is not fully loaded - it does not wait for the user to type it.
 - Citations [file, lines] are OPTIONAL: give them when pulling from context dumps (PDF/docx/etc.), when the user is studying, or on request. In ordinary conversation over already-loaded subtopic memory, answer naturally - no citation noise.
@@ -265,7 +265,6 @@ Size guard: after writing, check the memory file size - warn >500 lines / >30 KB
 
 `!path` - show this chat's saved path.
 `!changepath [new path]` - change this chat's saved path.
-`!status` - active tasks across the Grimoire, gathered from each topic's tasks.md.
 `!focus` - bring the conversation back to the current chat's topic.
 `!topic` - show the saved file's topic.
 `!changetopic [new topic]` - change the topic.
@@ -707,7 +706,7 @@ Create `.claude/settings.json`:
 Why this shape (the perimeter is the point, not decoration):
 
 - **`Bash` is denied wholesale.** A deny on `Edit`/`Write` for a file is only a real lock while the engine has no general code-execution primitive. With Bash available, the engine can write any file (python, redirection, `mv`) and walk straight around the deny list. Removing Bash turns the deny list into a wall. The LaC commands run on native gated tools instead: `!search`→Grep, `!tree`→Glob, `!save`→Write/Edit, dumps→Read. File moves and deletes hand off to the user's terminal (see "Filesystem moves" in commands.md).
-- **Whole classes are blocked, not names.** A deny list always lags the tool set, and a pure allow-list is impossible here: precedence is `deny > ask > allow`, with no default mode that refuses the unlisted, so `deny: ["*"]` would strike the allowed tools too. So the wall blocks classes. `mcp__*` denies every MCP server's tools, present and future - any `mcp__server__tool` write or exec primitive otherwise walks straight past the per-file locks, which never name it. `NotebookEdit` closes the notebook write path. The file locks use the project-root `//` anchor, not a single `/` (which Claude Code reads as an absolute filesystem path that can match nothing). And none of this survives `--dangerously-skip-permissions` - that mode turns off the whole permission layer, so never launch the LaC project with it.
+- **Whole classes are blocked, not names.** A deny list always lags the tool set, and a pure allow-list is impossible here: precedence is `deny > ask > allow`, with no default mode that refuses the unlisted, so `deny: ["*"]` would strike the allowed tools too. So the wall blocks classes. `mcp__*` denies every MCP server's tools, present and future - any `mcp__server__tool` write or exec primitive otherwise walks straight past the per-file locks, which never name it. `NotebookEdit` closes the notebook write path. The file locks use the project-root single-`/` anchor (`Edit(/llm_compose.md)`), not a bare filename (which matches at any depth) and not `//` (which Claude Code reads as an absolute filesystem path that can match nothing, silently disabling the lock). And none of this survives `--dangerously-skip-permissions` - that mode turns off the whole permission layer, so never launch the LaC project with it.
 - **The lock list covers its own enforcers.** `settings.json` denies edits to itself, to `settings.local.json` (which can define hooks - an escape hatch), and to `no-slop-scan.py` (which the PostToolUse hook executes - editing it would be code execution). Without these, each is a way back to writing the locked files.
 - **`CLAUDE.md` is locked too.** The boot ritual is denied as well, and `llm_compose.md` lists `CLAUDE.md` and the whole `.claude` folder at L1. An engine that can rewrite its own constitution can lift any lock from inside, so the boot file is immutable - changes go through the administrator.
 - **`SessionStart` forces the boot.** The hook injects the startup ritual every session, so entering LaC mode no longer depends on the model choosing to read CLAUDE.md. It is an inline `echo`, not a script file, so there is nothing editable to subvert.

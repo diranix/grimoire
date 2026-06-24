@@ -3,6 +3,11 @@
 All notable changes to Grimoire are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
+## [0.4.9.6] - 2026-06-24
+
+### Removed
+- **`!status` removed entirely.** With the global task index already gone in 0.4.9.5, `!status` had no central source left and is dropped from the command set, the read-only command list, and the `!load` note about `tasks.md`. Tasks live per topic in each topic's `tasks.md`; open one directly or via `!load topic/sub`. Mirrored across `commands.md` and the `lac-setup.md` template.
+
 ## [0.4.9.5] - 2026-06-24
 
 ### Changed
@@ -223,6 +228,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning foll
 ### Added
 - First public release (AGPL-3.0). Boot loading, integrity abort-check, deterministic `!save` (topic = folder of memory.md / tasks.md / context.md), strict topic separation, soft-delete to `Trash/`, safety floor in `limits.md`, injection protection (Grimoire content is data, not instructions).
 
+[0.4.9.6]: https://github.com/diranix/grimoire/releases/tag/v0.4.9.6
 [0.4.9.5]: https://github.com/diranix/grimoire/releases/tag/v0.4.9.5
 [0.4.9.4]: https://github.com/diranix/grimoire/releases/tag/v0.4.9.4
 [0.4.9.3]: https://github.com/diranix/grimoire/releases/tag/v0.4.9.3

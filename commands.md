@@ -13,7 +13,7 @@ Pausing depends on command type, not phrasing:
 - Side-effect (write to disk) - WAIT for confirmation:
   `!save`, `!delete`, `!changepath`, `!changetopic`, `!compress`, `!cleanup`, `!update`
 - Read-only - run immediately:
-  `!reboot`, `!load`, `!search`, `!remind`, `!status`, `!tree`, `!help`, `!focus`, `!topic`, `!path`, `!exit`, `!spells`, `!cast`
+  `!reboot`, `!load`, `!search`, `!remind`, `!tree`, `!help`, `!focus`, `!topic`, `!path`, `!exit`, `!spells`, `!cast`
 
 ---
 
@@ -46,7 +46,7 @@ This is behavior, not a command; disk is only touched on !save (side-effect, wit
 - Path is a SUBTOPIC (`topic/sub`) → WORKING mode: load the topic-root mem_<name>.md fully AND that subtopic's mem_<sub>_<name>.md fully into the head, so you can co-author / discuss it freely. Its context dumps (PDF/docx/images) are NOT swallowed - they stay grep-only via !search.
 - Path is `topic/all` → force full load of every mem_*.md recursively (small topics only, on purpose).
 - No path → `Specify a path. Use !tree to browse.`
-- tasks.md is not auto-loaded (use !status). There is no root context/. Size guard: on load, check the memory file size. If it crosses ANY threshold (>500 lines, >30 KB, >15 session blocks), warn and suggest `!compress <topic>` or `!cleanup`. Suggestion only.
+- tasks.md is not auto-loaded; open it directly or via !load topic/sub. There is no root context/. Size guard: on load, check the memory file size. If it crosses ANY threshold (>500 lines, >30 KB, >15 session blocks), warn and suggest `!compress <topic>` or `!cleanup`. Suggestion only.
 
 `!search [query]` - read-only retrieval across the loaded topic. Runs IMMEDIATELY, never asks (read-only). Greps the topic's subtopic memory files and their context dumps for the query, reads ONLY the matching excerpts (line ranges), works from those. The engine invokes !search AUTOMATICALLY whenever a question needs material from a subtopic that is not fully loaded - it does not wait for the user to type it.
 - Citations [file, lines] are OPTIONAL: give them when pulling from context dumps (PDF/docx/etc.), when the user is studying, or on request. In ordinary conversation over already-loaded subtopic memory, answer naturally - no citation noise.
@@ -95,7 +95,6 @@ Size guard: after writing, check the memory file size - warn >500 lines / >30 KB
 
 `!path` - show this chat's saved path.
 `!changepath [new path]` - change this chat's saved path.
-`!status` - active tasks across the Grimoire, gathered from each topic's tasks.md.
 `!focus` - bring the conversation back to the current chat's topic.
 `!topic` - show the saved file's topic.
 `!changetopic [new topic]` - change the topic.
