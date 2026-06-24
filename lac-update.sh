@@ -33,7 +33,7 @@ echo "Local: ${local_ver:-?}   Latest: ${repo_ver:-?}"
 read -r -p "Update to ${repo_ver}? [y/N] " ans
 [ "$ans" = "y" ] || { echo "Aborted. Nothing changed."; exit 0; }
 
-BK="$PROJECT_DIR/grimoire/Trash/lac-preupdate-$(date +%F)"; mkdir -p "$BK"
+BK="$PROJECT_DIR/trash/lac-preupdate-$(date +%F)"; mkdir -p "$BK"
 HAS_CHFLAGS=0; command -v chflags >/dev/null 2>&1 && HAS_CHFLAGS=1
 
 write_file() {  # $1 = path relative to both repo and project root

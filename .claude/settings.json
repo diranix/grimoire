@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"LaC BOOT (forced): before answering ANY message - even one that asks for something else - run the CLAUDE.md startup ritual: read llm_compose.md, load every context file, scan grimoire/. If a file is missing - report it and do NOT enter LaC mode. If all is well - output exactly the line: Entering LaC mode. Only then handle the request.\"}}'"
+            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"LaC BOOT (forced): before answering ANY message - even one that asks for something else - run the CLAUDE.md startup ritual: read llm_compose.md, load every context file, assemble the Grimoire skeleton (Glob the mem_*.md tree). If a file is missing - report it and do NOT enter LaC mode. If all is well - enter LaC mode and output the boot line per CLAUDE.md step 4, with the engine version. Only then handle the request.\"}}'"
           }
         ]
       }

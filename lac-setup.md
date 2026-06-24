@@ -1,6 +1,6 @@
 # LaC Setup
 > LLM as Code - installer for Claude Code (terminal or desktop app)
-> Version: 0.4.9.2
+> Version: 0.4.9.5
 
 ---
 
@@ -31,7 +31,7 @@ Execute the steps in order. After each step, report what was created, refreshed,
 
 Re-running this file must never duplicate files or clobber the user's data. The same path means overwrite-or-skip, never a second copy. Apply these rules on every step:
 
-- **Never overwrite user data.** If these exist, leave them exactly as they are: everything under `grimoire/` (including `grimoire/core/core.md` and `grimoire/core/TODO.md`), `.claude/settings.local.json`, any persona file the user added, any user-added spell.
+- **Never overwrite user data.** If these exist, leave them exactly as they are: everything under `grimoire/` (including `grimoire/core/core.md`), `.claude/settings.local.json`, any persona file the user added, any user-added spell.
 - **Preserve choices in `llm_compose.md`.** On update keep the existing admin name and the `context.persona` pointer; change only the `version` and any new structural keys.
 - **Refresh engine files to the latest.** These are not user-editable, so refreshing them is the whole point of an update: `limits.md`, `commands.md`, `CLAUDE.md`, `.claude/settings.json`, `.claude/no-slop-scan.py`, and the bundled `spells/noslop/noslop.md`. Write `personas/default_persona.md` only if it is missing or still the unchanged shipped default - if the user edited it, leave it.
 - **The locked-file caveat.** On a project that already has `.claude/settings.json`, its deny rules block the engine from rewriting the locked files (`llm_compose.md`, `limits.md`, `commands.md`, `CLAUDE.md`, `.claude/settings.json`, `.claude/no-slop-scan.py`). That is the security model working, not a failure. When a write to one of these is denied during an update, do not error out: report it and output a ready-to-run terminal command that writes the new content, the same way `!delete` hands off `mv`, so the user applies it outside the sandbox.
@@ -49,27 +49,29 @@ spells/
 spells/noslop/
 grimoire/
 grimoire/core/
-grimoire/Trash/
 grimoire/Life/
 grimoire/Work/
 grimoire/Hobbies/
 grimoire/Study/
+trash/
 .claude/
 ```
 
-Then drop an empty `.gitkeep` file into each category folder that starts empty, so git actually tracks the directory:
+`trash/` sits at the project root, a sibling of `grimoire/` - not inside it. It is the soft-delete grave (`!delete`, and the backup copies of `!cleanup` / `!compress` / `lac-update.sh`). It holds deleted copies of the user's data, so it is private just like `grimoire/` - see the Grimoire-privacy note in the README.
+
+Then drop an empty `.gitkeep` file into each folder that starts empty, so git actually tracks the directory:
 
 ```
-grimoire/Trash/.gitkeep
 grimoire/Life/.gitkeep
 grimoire/Work/.gitkeep
 grimoire/Hobbies/.gitkeep
 grimoire/Study/.gitkeep
+trash/.gitkeep
 ```
 
-Git does not track empty directories. Without `.gitkeep`, anyone who clones the repo gets `grimoire/` with no category folders, and the first `!save` writes into a path that does not exist. `grimoire/core/` and `spells/noslop/` do not need a keep file - they ship with real content (Step 5b, Step 6, Step 7).
+Git does not track empty directories. Without `.gitkeep`, anyone who clones the repo gets `grimoire/` with no category folders, and the first `!save` writes into a path that does not exist. `grimoire/core/` and `spells/noslop/` do not need a keep file - they ship with real content (Step 5b, Step 6).
 
-`grimoire/core/` holds `core.md` (the user's personal context) and `TODO.md` (the global task index); both load every session. There is no separate `grimoire/TODO/` - the TODO lives inside `core/`. `spells/noslop/` ships with the bundled `noslop` spell (see Step 5b).
+`grimoire/core/` holds `core.md` (the user's personal context); it loads every session. `spells/noslop/` ships with the bundled `noslop` spell (see Step 5b). Tasks live per topic in each topic's `tasks.md`, created on the first `!save` that has real tasks.
 
 Topic subfolders inside `Life/`, `Work/`, `Hobbies/`, `Study/` are created later, on the first `!save` for a topic. Subtopics and `tasks.md` are NOT pre-built - they appear only when there is real content. There is no root-level `context/`; context dumps (PDF/docx/images/text) live inside the subtopic they belong to.
 
@@ -88,7 +90,7 @@ Create `llm_compose.md` in the root. Markdown file, config inside a fenced `yaml
 > Only the administrator may edit this file.
 
 ```yaml
-version: "0.4.9.3"
+version: "0.4.9.5"
 
 model:
   # Claude Code chooses the model; this block is documentation only.
@@ -112,8 +114,9 @@ context:
   persona: personas/default_persona.md
   core: grimoire/core
 
-grimoire:
-  root: grimoire/
+paths:
+  grimoire: grimoire/
+  trash: trash/
 ```
 ~~~
 
@@ -139,7 +142,7 @@ Create `limits.md`:
 - May modify Level 3 files only
 - Level 1 (llm_compose.md, limits.md) and Level 2 (commands.md) are READ ONLY - never edited or overwritten, even at the user's direct request. Also locked at tool level in .claude/settings.json
 - Before writing, check the file's level - if L1 or L2, stop and notify the user
-- Never delete files - `!delete` moves to grimoire/Trash/ instead
+- Never delete files - `!delete` moves to trash/ instead
 - Prefer targeted edits over full rewrites
 - Before any write, read the current version; after a write, show what changed (diff: `+ added`, `- removed`)
 
@@ -246,7 +249,6 @@ Write behavior:
 - File exists → read, then append to the end. NEVER overwrite. NEVER touch context dumps.
 - Route: summary → mem_<name>.md or the subtopic's mem_<sub>_<name>.md; tasks → topic-root tasks.md; context dumps → their own subtopic folder.
 - Also update the route in mem_<name>.md so !search can find newly added material.
-- Critical or cross-topic tasks are ALSO appended to grimoire/core/TODO.md (global index).
 Multiple topics - STRICT separation (never mix): one self-contained summary per topic in its own folder; report what went where; ask only when a topic→folder mapping is genuinely unclear.
 Block format (memory files):
   ## YYYY-MM-DD - [subtitle]
@@ -259,11 +261,11 @@ Block format (memory files):
 Then output: Saved / Topic / Files written / "To change path: !changepath" / "To change topic: !changetopic".
 Size guard: after writing, check the memory file size - warn >500 lines / >30 KB / >15 blocks; suggest !compress or !cleanup (suggestion only).
 
-`!delete [path]` - soft-delete to grimoire/Trash/ (needs confirmation). The engine has no Bash and cannot move files itself - it states this plainly, outputs the ready-to-run `mv` command for the user to execute, and verifies after. Never hard-deleted; recover from Trash. Canonical delete in LaC. See "Filesystem moves" below.
+`!delete [path]` - soft-delete to trash/ (needs confirmation). The engine has no Bash and cannot move files itself - it states this plainly, outputs the ready-to-run `mv` command for the user to execute, and verifies after. Never hard-deleted; recover from trash. Canonical delete in LaC. See "Filesystem moves" below.
 
 `!path` - show this chat's saved path.
 `!changepath [new path]` - change this chat's saved path.
-`!status` - active tasks from grimoire/core/TODO.md (global index; per-topic detail in each topic's tasks.md).
+`!status` - active tasks across the Grimoire, gathered from each topic's tasks.md.
 `!focus` - bring the conversation back to the current chat's topic.
 `!topic` - show the saved file's topic.
 `!changetopic [new topic]` - change the topic.
@@ -271,11 +273,11 @@ Size guard: after writing, check the memory file size - warn >500 lines / >30 KB
 `!cleanup [scope]` - STRUCTURAL Grimoire maintenance. NON-LOSSY: it never shortens, summarizes, or rewrites your notes - so moving folders around never costs you anything. If [scope] is omitted, FIRST ASK whether to run over the WHOLE Grimoire or only the CURRENT topic, and wait (`!cleanup all` = whole Grimoire; `!cleanup .` or `!cleanup <topic>` = that topic only). Actions:
   • redistribute the topic's content into the right subtopics (move misplaced material into the subtopic's mem_<sub>_<name>.md where it belongs, creating a subtopic only when content warrants it) and update the route in mem_<name>.md to match;
   • remove DUPLICATED information, keeping one canonical copy;
-  • prune COMPLETED tasks from tasks.md (and keep grimoire/core/TODO.md in sync).
+  • prune COMPLETED tasks from tasks.md.
 NEVER touch context dumps - they are read-only source material.
 To condense or summarize bloated/stale notes, use !compress - that's the lossy counterpart, kept deliberately separate.
-Side-effect: show the whole plan as a diff and WAIT for confirmation; everything moved/removed is copied to Trash.
-`!compress [topic]` - shrink a topic's memory files to save tokens (the LOSSY counterpart to !cleanup). Operates on mem_<name>.md and the subtopic mem_<sub>_<name>.md files. Keep the last 3-5 session blocks verbatim; for older or bloated fragments apply the action its TYPE calls for - STALE/completed/irrelevant → shorten to ONE sentence and merge into `## Digest (up to YYYY-MM-DD)`; CURRENT but bloated → full resummarization without losing any fact/decision. Side-effect: show a diff and wait for confirmation. Before writing, copy the original to grimoire/Trash/<topic>-precompress-YYYY-MM-DD.md. Only memory files are touched - tasks.md (handled by !cleanup) and context dumps are left untouched.
+Side-effect: show the whole plan as a diff and WAIT for confirmation; everything moved/removed is copied to trash.
+`!compress [topic]` - shrink a topic's memory files to save tokens (the LOSSY counterpart to !cleanup). Operates on mem_<name>.md and the subtopic mem_<sub>_<name>.md files. Keep the last 3-5 session blocks verbatim; for older or bloated fragments apply the action its TYPE calls for - STALE/completed/irrelevant → shorten to ONE sentence and merge into `## Digest (up to YYYY-MM-DD)`; CURRENT but bloated → full resummarization without losing any fact/decision. Side-effect: show a diff and wait for confirmation. Before writing, copy the original to trash/<topic>-precompress-YYYY-MM-DD.md. Only memory files are touched - tasks.md (handled by !cleanup) and context dumps are left untouched.
 `!update` - check the installed version against the repo and, on confirmation, update. The check is read-only and runs at once; the update waits for a yes.
 - Check phase (runs immediately): read the local `version` from llm_compose.md, fetch the latest version and CHANGELOG from github.com/diranix/grimoire, and show current vs latest plus what changed. The CHANGELOG is always shown. If the local version is already current, say so and stop - a clean no-op, nothing written.
 - Update phase (waits for confirmation): if a newer version exists, ask whether to update. Without a yes, nothing changes. On yes, fetch the latest lac-setup.md and run it in update mode (see Idempotency): refresh the engine files you are allowed to write, preserve all user data (core.md, tasks, admin name, the active persona, the whole grimoire), and for each locked file the deny rule blocks, output a ready terminal command for the user to run.
@@ -289,13 +291,13 @@ Side-effect: show the whole plan as a diff and WAIT for confirmation; everything
 
 ## Filesystem moves - the engine has no Bash
 
-The engine cannot move, rename, or delete files itself (Bash is denied; only Read/Grep/Glob/Write/Edit are available). Whenever a command must physically move or delete a file (`!delete`, and the move/copy-to-Trash steps of `!cleanup` and `!compress`), the engine does NOT fake it or silently skip it. It:
+The engine cannot move, rename, or delete files itself (Bash is denied; only Read/Grep/Glob/Write/Edit are available). Whenever a command must physically move or delete a file (`!delete`, and the move/copy-to-trash steps of `!cleanup` and `!compress`), the engine does NOT fake it or silently skip it. It:
 1. states plainly that it cannot move files itself;
 2. outputs the full, ready-to-run terminal command, quoted, relative to the LaC root;
 3. waits for the user to run it, then verifies the result.
 
 Canonical soft-delete template:
-    mv "<path>" "grimoire/Trash/<name>-<reason>-YYYY-MM-DD"
+    mv "<path>" "trash/<name>-<reason>-YYYY-MM-DD"
 
 Writing NEW files (Write/Edit) the engine still does itself; only moves and deletes hand off to the terminal. This is by design: with Bash denied, the tool-level lock on L1/L2 is a real wall, not a bypassable one.
 
@@ -592,41 +594,16 @@ Create `grimoire/core/core.md` (fresh install only - on update, if it exists, ke
 
 _Filled in as the system is used_
 
-## TODO
-
-_See grimoire/core/TODO.md_
-
 ## Notes
 
 _Filled in as the system is used_
 ~~~
 
----
-
-## Step 7 - grimoire/core/TODO.md
-
-Create `grimoire/core/TODO.md` (fresh install only - on update, keep the existing file; never overwrite the user's tasks):
-
-~~~markdown
-# TODO
-
-> Updated after each session via !save.
+Tasks are not kept in a global file. They live per topic in each topic's `tasks.md`, created on the first `!save` for a topic that has real tasks.
 
 ---
 
-## 🔴 Critical
-_empty for now_
-
-## 🟡 Soon
-_empty for now_
-
-## 🟢 Projects
-_empty for now_
-~~~
-
----
-
-## Step 8 - CLAUDE.md (the boot file - replaces the old memory hook)
+## Step 7 - CLAUDE.md (the boot file - replaces the old memory hook)
 
 Create `CLAUDE.md` in the project root. Claude Code reads it automatically at the start of every session and re-injects it after compaction, so LaC boots on its own - no hook in app memory, no `!boot` needed.
 
@@ -637,9 +614,9 @@ You are the LaC engine. This project runs the LaC protocol.
 
 On session start:
 1. Read `llm_compose.md` and load into context ALL files listed in its `context` section.
-2. Scan `grimoire/` and load the folder tree (directory names only, not file contents) - so that on !save you map the conversation to an existing topic instead of spawning duplicates.
+2. Assemble the Grimoire skeleton: Glob `grimoire/{Work,Study,Life,Hobbies}/**/mem_*.md` - the mem-file paths give the tree of topics and subtopics without content, without trash, without dumps. NEVER fall back to `grimoire/**` - it rakes in every file and bloats context. The skeleton exists so that on !save you map the conversation to an existing topic instead of spawning duplicates.
 3. If ANY of those files is missing or unreadable - do NOT enter LaC mode. Report exactly which file(s) failed and stop.
-4. If all loaded - write exactly one line: "Entering LaC mode" - then follow commands.md.
+4. If all loaded - write the boot line "Entering LaC mode version ###", appending the engine version read from llm_compose.md - then follow commands.md.
 
 Rules:
 - Execute commands from commands.md (prefix `!`).
@@ -665,11 +642,15 @@ Grounding - apply to claims about Grimoire content:
 - A path, file name, or number - verify by grep or read first, then assert.
 - Tag mismatch is a drift signal: `[knowledge]` or `[guess]` where `[grimoire]` was expected is an early siren that the engine is reciting from memory instead of opening the book. Tags are compact and do not break the persona's voice. limits.md outranks all.
 - If the model's knowledge does not cover a factual question about the outside world (a tool, product, event, version) - do not guess. Web-search first, then assert. A `[guess]` in place of a search where the fact is verifiable is an error, not an acceptable state.
+
+Other Grimoire rules:
+- Subtopics may have their own subtopics (nesting deeper than one tier is normal, not a flaw).
+- The Grimoire is a shared notebook where the LLM helps the user. The user's own text (handwritten notes, dumps) is untouchable: the engine does not edit or restructure it without a direct request; it may only append its own blocks before or after, clearly delimited. "Hands off" means read and cite only.
 ~~~
 
 ---
 
-## Step 9 - .claude/settings.json (hardened lock + boot hook)
+## Step 8 - .claude/settings.json (hardened lock + boot hook)
 
 Create `.claude/settings.json`:
 
@@ -702,7 +683,7 @@ Create `.claude/settings.json`:
         "hooks": [
           {
             "type": "command",
-            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"LaC BOOT (forced): before answering ANY message - even one that asks for something else - run the CLAUDE.md startup ritual: read llm_compose.md, load every context file, scan grimoire/. If a file is missing - report it and do NOT enter LaC mode. If all is well - output exactly the line: Entering LaC mode. Only then handle the request.\"}}'"
+            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"LaC BOOT (forced): before answering ANY message - even one that asks for something else - run the CLAUDE.md startup ritual: read llm_compose.md, load every context file, assemble the Grimoire skeleton (Glob the mem_*.md tree). If a file is missing - report it and do NOT enter LaC mode. If all is well - enter LaC mode and output the boot line per CLAUDE.md step 4, with the engine version. Only then handle the request.\"}}'"
           }
         ]
       }
@@ -730,7 +711,7 @@ Why this shape (the perimeter is the point, not decoration):
 - **The lock list covers its own enforcers.** `settings.json` denies edits to itself, to `settings.local.json` (which can define hooks - an escape hatch), and to `no-slop-scan.py` (which the PostToolUse hook executes - editing it would be code execution). Without these, each is a way back to writing the locked files.
 - **`CLAUDE.md` is locked too.** The boot ritual is denied as well, and `llm_compose.md` lists `CLAUDE.md` and the whole `.claude` folder at L1. An engine that can rewrite its own constitution can lift any lock from inside, so the boot file is immutable - changes go through the administrator.
 - **`SessionStart` forces the boot.** The hook injects the startup ritual every session, so entering LaC mode no longer depends on the model choosing to read CLAUDE.md. It is an inline `echo`, not a script file, so there is nothing editable to subvert.
-- **`PostToolUse` runs the deslop guard.** A warn-only invisible-character scan on every Write/Edit (Step 9b). It never blocks and always exits 0.
+- **`PostToolUse` runs the deslop guard.** A warn-only invisible-character scan on every Write/Edit (Step 8b). It never blocks and always exits 0.
 
 This deny set is **per-project** - it lives in the LaC folder's `.claude/`, not in the user's global `~/.claude/settings.json`, so it never touches Bash in the user's other projects.
 
@@ -738,7 +719,7 @@ Note: a tool-level deny is the current ceiling of in-tool protection. The true p
 
 ---
 
-## Step 9b - .claude/no-slop-scan.py (deslop guard hook)
+## Step 8b - .claude/no-slop-scan.py (deslop guard hook)
 
 Create `.claude/no-slop-scan.py`. The PostToolUse hook runs it after every Write/Edit; it scans the just-written file for invisible characters and for em/en dashes, and prints a warning when it finds any. It never blocks a tool call and always exits 0. Lines that quote the dash to state the rule itself ("no em dash") are skipped, so the noslop spell and CLAUDE.md never warn on their own examples. The warning fires on Grimoire notes too - it is a nudge, not a wall, so personal notes that use a dash are unaffected beyond a one-line message. Requires `python3` on PATH; if absent, the hook simply does nothing.
 
@@ -845,16 +826,15 @@ Structure:
 ├── .claude/
 │   ├── settings.json    ← hardened lock (L1/L2 + self + Bash off) + boot hook
 │   └── no-slop-scan.py  ← warn-only invisible-char guard (PostToolUse)
-└── grimoire/
-    ├── core/
-    │   ├── core.md       ← personal context (loaded every session)
-    │   └── TODO.md       ← global task index (loaded every session)
-    ├── Trash/.gitkeep    ← keep files so git tracks the empty categories
-    └── Life/  Work/  Hobbies/  Study/   (each with a .gitkeep until first !save)
-        └── [topic]/                  ← created on first !save
-            ├── mem_<topic>.md         ← always (routing index + light summary)
-            ├── tasks.md               ← only if there are tasks (shared across the topic)
-            └── [subtopic]/            ← optional
-                ├── mem_<sub>_<topic>.md   ← the subtopic's memory
-                └── <context dumps>        ← optional: PDF/docx/images/text (read-only)
+├── grimoire/
+│   ├── core/
+│   │   └── core.md       ← personal context (loaded every session)
+│   └── Life/  Work/  Hobbies/  Study/   (each with a .gitkeep until first !save)
+│       └── [topic]/                  ← created on first !save
+│           ├── mem_<topic>.md         ← always (routing index + light summary)
+│           ├── tasks.md               ← only if there are tasks (shared across the topic)
+│           └── [subtopic]/            ← optional
+│               ├── mem_<sub>_<topic>.md   ← the subtopic's memory
+│               └── <context dumps>        ← optional: PDF/docx/images/text (read-only)
+└── trash/.gitkeep       ← soft-delete grave (project-root sibling of grimoire/); keep private
 ```

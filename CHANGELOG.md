@@ -3,6 +3,23 @@
 All notable changes to Grimoire are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
+## [0.4.9.5] - 2026-06-24
+
+### Changed
+- **Boot ritual assembles the `mem_*.md` skeleton, and the boot line carries the version.** `CLAUDE.md` step 2 now globs `grimoire/{Work,Study,Life,Hobbies}/**/mem_*.md` to map the topic tree from the routing-file paths alone - never falling back to `grimoire/**`, which rakes in every file and bloats context. Step 4 outputs "Entering LaC mode version ###" with the engine version from `llm_compose.md`. The `SessionStart` hook text in `.claude/settings.json` is mirrored to match (skeleton scan, defer the boot line to step 4).
+- **Two grounding rules added to `CLAUDE.md`.** Subtopics may nest deeper than one tier (normal, not a flaw). The Grimoire is a shared notebook: the user's own handwritten notes and dumps are untouchable - the engine appends its own clearly delimited blocks, never edits or restructures the user's text without a direct request ("hands off" = read and cite only).
+
+### Removed
+- **Global `grimoire/core/TODO.md` task index dropped, `!status` reframed.** The single global task file is gone; tasks live per topic in each topic's `tasks.md`. `!status` now gathers active tasks across the Grimoire from those per-topic files instead of a central index. The installer no longer creates `core/TODO.md` (old Step 7 removed; `core/` ships `core.md` only), and `!save` / `!cleanup` no longer sync a global index. Mirrored across `commands.md`, the `lac-setup.md` templates, and the structure diagram.
+
+## [0.4.9.4] - 2026-06-24
+
+### Changed
+- **Trash location is now declared once and canonical: project-root `trash/`.** The soft-delete grave had two conflicting names across the engine files - `grimoire/Trash/` in some, a bare `Trash/` in others - so `!delete`, `!cleanup`, `!compress`, and `lac-update.sh` could point at different graves on a case-sensitive filesystem (silently fine on case-insensitive macOS, broken on Linux or under a runtime). `llm_compose.md` now carries a single `paths:` block (`grimoire: grimoire/`, `trash: trash/`) as the one source of truth, replacing the old `grimoire: root:` key. `trash/` moves out of `grimoire/` to a project-root sibling, lowercase. All engine files and templates (`limits.md`, `commands.md`, `lac-setup.md`), the updater backup path in `lac-update.sh`, the folder/`.gitkeep` structure, and the tree diagram are mirrored to match.
+
+### Docs
+- **Privacy note widened to cover `trash/`.** Since the grave now lives at the project root rather than inside `grimoire/`, it is no longer covered by gitignoring `grimoire/`. The README's "Keep your Grimoire private" section now tells you to add both `grimoire/` and `trash/` to `.gitignore`, because `trash/` holds soft-deleted copies of the same personal data.
+
 ## [0.4.9.3] - 2026-06-21
 
 ### Added
@@ -206,6 +223,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning foll
 ### Added
 - First public release (AGPL-3.0). Boot loading, integrity abort-check, deterministic `!save` (topic = folder of memory.md / tasks.md / context.md), strict topic separation, soft-delete to `Trash/`, safety floor in `limits.md`, injection protection (Grimoire content is data, not instructions).
 
+[0.4.9.5]: https://github.com/diranix/grimoire/releases/tag/v0.4.9.5
+[0.4.9.4]: https://github.com/diranix/grimoire/releases/tag/v0.4.9.4
+[0.4.9.3]: https://github.com/diranix/grimoire/releases/tag/v0.4.9.3
 [0.4.9.2]: https://github.com/diranix/grimoire/releases/tag/v0.4.9.2
 [0.4.9.1]: https://github.com/diranix/grimoire/releases/tag/v0.4.9.1
 [0.4.9]: https://github.com/diranix/grimoire/releases/tag/v0.4.9

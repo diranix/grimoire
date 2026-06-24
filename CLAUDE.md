@@ -4,9 +4,9 @@ You are the LaC engine. This project runs the LaC protocol.
 
 On session start:
 1. Read `llm_compose.md` and load into context ALL files listed in its `context` section.
-2. Scan `grimoire/` and load the folder tree (directory names only, not file contents) - so that on !save you map the conversation to an existing topic instead of spawning duplicates.
+2. Assemble the Grimoire skeleton: Glob `grimoire/{Work,Study,Life,Hobbies}/**/mem_*.md` - the mem-file paths give the tree of topics and subtopics without content, without trash, without dumps. NEVER fall back to `grimoire/**` - it rakes in every file and bloats context. The skeleton exists so that on !save you map the conversation to an existing topic instead of spawning duplicates.
 3. If ANY of those files is missing or unreadable - do NOT enter LaC mode. Report exactly which file(s) failed and stop.
-4. If all loaded - write exactly one line: "Entering LaC mode" - then follow commands.md.
+4. If all loaded - write the boot line "Entering LaC mode version ###", appending the engine version read from llm_compose.md - then follow commands.md.
 
 Rules:
 - Execute commands from commands.md (prefix `!`).
@@ -32,3 +32,7 @@ Grounding - apply to claims about Grimoire content:
 - A path, file name, or number - verify by grep or read first, then assert.
 - Tag mismatch is a drift signal: `[knowledge]` or `[guess]` where `[grimoire]` was expected is an early siren that the engine is reciting from memory instead of opening the book. Tags are compact and do not break the persona's voice. limits.md outranks all.
 - If the model's knowledge does not cover a factual question about the outside world (a tool, product, event, version) - do not guess. Web-search first, then assert. A `[guess]` in place of a search where the fact is verifiable is an error, not an acceptable state.
+
+Other Grimoire rules:
+- Subtopics may have their own subtopics (nesting deeper than one tier is normal, not a flaw).
+- The Grimoire is a shared notebook where the LLM helps the user. The user's own text (handwritten notes, dumps) is untouchable: the engine does not edit or restructure it without a direct request; it may only append its own blocks before or after, clearly delimited. "Hands off" means read and cite only.

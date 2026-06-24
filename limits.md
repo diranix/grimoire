@@ -11,7 +11,7 @@
 - May modify Level 3 files only
 - Level 1 (llm_compose.md, limits.md) and Level 2 (commands.md) are READ ONLY - never edited or overwritten, even at the user's direct request. Also locked at tool level in .claude/settings.json
 - Before writing, check the file's level - if L1 or L2, stop and notify the user
-- Never delete files - `!delete` moves to grimoire/Trash/ instead
+- Never delete files - `!delete` moves to trash/ instead
 - Prefer targeted edits over full rewrites
 - Before any write, read the current version; after a write, show what changed (diff: `+ added`, `- removed`)
 

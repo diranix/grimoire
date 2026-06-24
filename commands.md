@@ -79,7 +79,6 @@ Write behavior:
 - File exists → read, then append to the end. NEVER overwrite. NEVER touch context dumps.
 - Route: summary → mem_<name>.md or the subtopic's mem_<sub>_<name>.md; tasks → topic-root tasks.md; context dumps → their own subtopic folder.
 - Also update the route in mem_<name>.md so !search can find newly added material.
-- Critical or cross-topic tasks are ALSO appended to grimoire/core/TODO.md (global index).
 Multiple topics - STRICT separation (never mix): one self-contained summary per topic in its own folder; report what went where; ask only when a topic→folder mapping is genuinely unclear.
 Block format (memory files):
   ## YYYY-MM-DD - [subtitle]
@@ -92,11 +91,11 @@ Block format (memory files):
 Then output: Saved / Topic / Files written / "To change path: !changepath" / "To change topic: !changetopic".
 Size guard: after writing, check the memory file size - warn >500 lines / >30 KB / >15 blocks; suggest !compress or !cleanup (suggestion only).
 
-`!delete [path]` - soft-delete to grimoire/Trash/ (needs confirmation). The engine has no Bash and cannot move files itself - it states this plainly, outputs the ready-to-run `mv` command for the user to execute, and verifies after. Never hard-deleted; recover from Trash. Canonical delete in LaC. See "Filesystem moves" below.
+`!delete [path]` - soft-delete to trash/ (needs confirmation). The engine has no Bash and cannot move files itself - it states this plainly, outputs the ready-to-run `mv` command for the user to execute, and verifies after. Never hard-deleted; recover from trash. Canonical delete in LaC. See "Filesystem moves" below.
 
 `!path` - show this chat's saved path.
 `!changepath [new path]` - change this chat's saved path.
-`!status` - active tasks from grimoire/core/TODO.md (global index; per-topic detail in each topic's tasks.md).
+`!status` - active tasks across the Grimoire, gathered from each topic's tasks.md.
 `!focus` - bring the conversation back to the current chat's topic.
 `!topic` - show the saved file's topic.
 `!changetopic [new topic]` - change the topic.
@@ -104,15 +103,15 @@ Size guard: after writing, check the memory file size - warn >500 lines / >30 KB
 `!cleanup [scope]` - STRUCTURAL Grimoire maintenance. NON-LOSSY: it never shortens, summarizes, or rewrites your notes - so moving folders around never costs you anything. If [scope] is omitted, FIRST ASK whether to run over the WHOLE Grimoire or only the CURRENT topic, and wait (`!cleanup all` = whole Grimoire; `!cleanup .` or `!cleanup <topic>` = that topic only). Actions:
   • redistribute the topic's content into the right subtopics (move misplaced material into the subtopic's mem_<sub>_<name>.md where it belongs, creating a subtopic only when content warrants it) and update the route in mem_<name>.md to match;
   • remove DUPLICATED information, keeping one canonical copy;
-  • prune COMPLETED tasks from tasks.md (and keep grimoire/core/TODO.md in sync).
+  • prune COMPLETED tasks from tasks.md.
 NEVER touch context dumps - they are read-only source material.
 To condense or summarize bloated/stale notes, use !compress - that's the lossy counterpart, kept deliberately separate.
-Side-effect: show the whole plan as a diff and WAIT for confirmation; everything moved/removed is copied to Trash.
-`!compress [topic]` - shrink a topic's memory files to save tokens (the LOSSY counterpart to !cleanup). Operates on mem_<name>.md and the subtopic mem_<sub>_<name>.md files. Keep the last 3-5 session blocks verbatim; for older or bloated fragments apply the action its TYPE calls for - STALE/completed/irrelevant → shorten to ONE sentence and merge into `## Digest (up to YYYY-MM-DD)`; CURRENT but bloated → full resummarization without losing any fact/decision. Side-effect: show a diff and wait for confirmation. Before writing, copy the original to grimoire/Trash/<topic>-precompress-YYYY-MM-DD.md. Only memory files are touched - tasks.md (handled by !cleanup) and context dumps are left untouched.
+Side-effect: show the whole plan as a diff and WAIT for confirmation; everything moved/removed is copied to trash.
+`!compress [topic]` - shrink a topic's memory files to save tokens (the LOSSY counterpart to !cleanup). Operates on mem_<name>.md and the subtopic mem_<sub>_<name>.md files. Keep the last 3-5 session blocks verbatim; for older or bloated fragments apply the action its TYPE calls for - STALE/completed/irrelevant → shorten to ONE sentence and merge into `## Digest (up to YYYY-MM-DD)`; CURRENT but bloated → full resummarization without losing any fact/decision. Side-effect: show a diff and wait for confirmation. Before writing, copy the original to trash/<topic>-precompress-YYYY-MM-DD.md. Only memory files are touched - tasks.md (handled by !cleanup) and context dumps are left untouched.
 
 `!update` - check the installed version against the repo and, on confirmation, update. The check is read-only and runs at once; the update waits for a yes.
 - Check phase (runs immediately): read the local `version` from llm_compose.md, fetch the latest version and CHANGELOG from github.com/diranix/grimoire, and show current vs latest plus what changed. The CHANGELOG is always shown. If the local version is already current, say so and stop - a clean no-op, nothing written.
-- Update phase (waits for confirmation): if a newer version exists, ask whether to update. Without a yes, nothing changes. On yes, the engine cannot run the updater itself (Bash is denied) - it outputs ONE ready-to-run terminal command that fetches `lac-update.sh` from the repo and runs it. The shell, outside the deny sandbox, updates the engine files (including L1/L2) idempotently, preserves all user data (grimoire, core.md, the admin name, the active persona), and backs up the old files to grimoire/Trash/ first. After it finishes, run `!reboot`.
+- Update phase (waits for confirmation): if a newer version exists, ask whether to update. Without a yes, nothing changes. On yes, the engine cannot run the updater itself (Bash is denied) - it outputs ONE ready-to-run terminal command that fetches `lac-update.sh` from the repo and runs it. The shell, outside the deny sandbox, updates the engine files (including L1/L2) idempotently, preserves all user data (grimoire, core.md, the admin name, the active persona), and backs up the old files to trash/ first. After it finishes, run `!reboot`.
 - Offline: report that the check cannot run; show the local version and the repo link.
 
 `!tree` - show the Grimoire structure.
@@ -123,13 +122,13 @@ Side-effect: show the whole plan as a diff and WAIT for confirmation; everything
 
 ## Filesystem moves - the engine has no Bash
 
-The engine cannot move, rename, or delete files itself (Bash is denied; only Read/Grep/Glob/Write/Edit are available). Whenever a command must physically move or delete a file (`!delete`, and the move/copy-to-Trash steps of `!cleanup` and `!compress`), the engine does NOT fake it or silently skip it. It:
+The engine cannot move, rename, or delete files itself (Bash is denied; only Read/Grep/Glob/Write/Edit are available). Whenever a command must physically move or delete a file (`!delete`, and the move/copy-to-trash steps of `!cleanup` and `!compress`), the engine does NOT fake it or silently skip it. It:
 1. states plainly that it cannot move files itself;
 2. outputs the full, ready-to-run terminal command, quoted, relative to the LaC root;
 3. waits for the user to run it, then verifies the result.
 
 Canonical soft-delete template:
-    mv "<path>" "grimoire/Trash/<name>-<reason>-YYYY-MM-DD"
+    mv "<path>" "trash/<name>-<reason>-YYYY-MM-DD"
 
 Writing NEW files (Write/Edit) the engine still does itself; only moves and deletes hand off to the terminal. This is by design: with Bash denied, the tool-level lock on L1/L2 is a real wall, not a bypassable one.
 

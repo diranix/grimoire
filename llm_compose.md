@@ -6,7 +6,7 @@
 > Only the administrator may edit this file.
 
 ```yaml
-version: "0.4.9.3"
+version: "0.4.9.5"
 
 model:
   # Claude Code chooses the model; this block is documentation only.
@@ -30,6 +30,7 @@ context:
   persona: personas/default_persona.md
   core: grimoire/core
 
-grimoire:
-  root: grimoire/
+paths:
+  grimoire: grimoire/
+  trash: trash/
 ```
