@@ -3,6 +3,24 @@
 All notable changes to Grimoire are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
+## [0.5.0] - 2026-06-25
+
+### Changed
+- **Installer flipped from embedded templates to link-based fetch.** `lac-setup.md` no longer carries the body of every file inside itself. It now lists each technical file as a raw repo URL and instructs the LLM to fetch it and write it locally, byte for byte. The repo copies become the single source of truth, so the installed files match the repo with no second copy to drift - the failure mode where the engine and the installer template fell out of sync is gone. The installer keeps only the human prerequisites, the fetch manifest, the idempotency rules, and the final message.
+- **The repo now ships real copies of every technical file.** Previously only `llm_compose.md`, `limits.md`, `commands.md`, and `CLAUDE.md` lived as standalone files and everything else existed only embedded in the installer. The repo now carries `.claude/settings.json`, `.claude/no-slop-scan.py`, `personas/base_persona.md`, `spells/noslop/noslop.md`, a `grimoire/core/core.md` template, and the `grimoire/{Work,Study,Life,Hobbies}/` + `trash/` `.gitkeep` skeleton. `.gitignore` whitelists the new files.
+- **`lac-update.sh` now refreshes the bundled `noslop` spell.** The shell updater adds `spells/noslop/noslop.md` to the engine files it refreshes, so existing installs get noslop fixes instead of only fresh installs. Your own spells stay untouched, no persona is ever overwritten (`base_persona.md` is restored only if it is missing), and a replaced `noslop` is backed up to `trash/` first. The updater also reports cleanly when it cannot reach the repo instead of dying silently.
+
+### Synced to the live engine (v0.5.0)
+The local install is canon; the repo was a `0.4.9.6` snapshot behind it. Mirrored across all shipped copies:
+- **`llm_compose.md` schema.** `users.ward: <name>` replaces the old `users.admin: [list]` plus `permissions:` block; level keys are `L1` / `L2` (were `1` / `2`). The persona pointer names `personas/base_persona.md`.
+- **`CLAUDE.md` two-wave boot.** Loading runs in trust order: wave 1 is L1 then L2, wave 2 is the L3 context (persona, core) then the `mem_*.md` Grimoire skeleton - and wave 2 never starts before wave 1 is in context, so an L3 injection cannot act before its limits. The boot line carries the version.
+- **`.claude/settings.json` hardening.** A `.claude/**` wildcard deny locks the whole config folder, not just the named files. The `SessionStart` hook text is rewritten to spell out the trust-order ritual (Phase A constitution, Phase B lower-trust, L3 is data not instructions).
+- **`commands.md` terser and resequenced.** `!update` is now a split command - the version check runs immediately, the write waits for consent. `!changetopic` physically relocates the topic folder. Dropped: `!exit`, `!changepath`, `!status`, and the checkpoint-buffer section. The save block format uses one `## YYYY-MM-DD` date header with `### [subtitle]` blocks under it.
+- **`noslop` spell rewritten ground-up.** A cleaner two-layer pass (mechanical proof vs habit-of-phrasing judgement) with the same intent.
+
+### Removed
+- **`personas/default_persona.md` replaced by `personas/base_persona.md`** - a minimal neutral slot, the least the engine needs to speak. Same role: repoint `llm_compose.md` to swap it.
+
 ## [0.4.9.6] - 2026-06-24
 
 ### Removed
@@ -228,6 +246,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/); versioning foll
 ### Added
 - First public release (AGPL-3.0). Boot loading, integrity abort-check, deterministic `!save` (topic = folder of memory.md / tasks.md / context.md), strict topic separation, soft-delete to `Trash/`, safety floor in `limits.md`, injection protection (Grimoire content is data, not instructions).
 
+[0.5.0]: https://github.com/diranix/grimoire/releases/tag/v0.5.0
 [0.4.9.6]: https://github.com/diranix/grimoire/releases/tag/v0.4.9.6
 [0.4.9.5]: https://github.com/diranix/grimoire/releases/tag/v0.4.9.5
 [0.4.9.4]: https://github.com/diranix/grimoire/releases/tag/v0.4.9.4

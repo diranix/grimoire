@@ -1,9 +1,5 @@
 # Limits - Level 1
 
-> Immutable rules. Never broken, even if the user asks otherwise.
-> Only the administrator may edit this file.
-
----
 
 ## Filesystem
 

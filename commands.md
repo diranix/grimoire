@@ -1,9 +1,5 @@
 # Commands - Level 2
 
-> LLM command set. Admin-only. Must not contradict limits.md (L1).
-
----
-
 ## Syntax
 
 Commands are canonical, prefixed `!`. Free-form input in any language is mapped to the canonical form and echoed (the echo is not a confirmation and does not pause). Canonical `!cmd` input needs no echo.
@@ -11,152 +7,89 @@ Commands are canonical, prefixed `!`. Free-form input in any language is mapped 
 Pausing depends on command type, not phrasing:
 
 - Side-effect (write to disk) - WAIT for confirmation:
-  `!save`, `!delete`, `!changepath`, `!changetopic`, `!compress`, `!cleanup`, `!update`
+  `!save`, `!delete`, `!changetopic`, `!compress`, `!cleanup`
 - Read-only - run immediately:
-  `!reboot`, `!load`, `!search`, `!remind`, `!tree`, `!help`, `!focus`, `!topic`, `!path`, `!exit`, `!spells`, `!cast`
-
----
-
-## Checkpoint buffer (live summary)
-
-The engine keeps a LIVE draft summary of the session in the active context - NOT on disk.
-This is behavior, not a command; disk is only touched on !save (side-effect, with confirmation).
-
-- As the conversation goes, append every WORTHWHILE decision to the buffer the moment it lands:
-  decision, conclusion, config, date, new task. Not at the end - at the moment it happens.
-- Keep the buffer in the canonical memory.md block format from the start:
-    ## YYYY-MM-DD - [subtitle]
-    [summary]
-    ---
-  Accumulate tasks separately in tasks.md line format.
-- `!remind` shows the current buffer state (read-only, no pause).
-- `!save` uses the ready buffer as its base - it does not rush a recap of the chat.
-- The buffer lives in the session context. If the session dies before !save, the buffer is lost.
-  So the engine periodically REMINDS you to save once decisions have piled up in the buffer
-  (the nudge is not a write; nothing is written without an explicit !save).
+  `!reboot`, `!load`, `!search`, `!remind`, `!help`, `!focus`, `!topic`, `!path`, `!spells`, `!cast`, `!tree`
+- Split - the read-only half runs immediately, the writing half waits for consent:
+  `!update` (version check shows at once; the actual update waits)
 
 ---
 
 ## System commands
 
-`!reboot` - re-read llm_compose.md and reload all context files. Use after editing LaC files outside the session (it auto-loads at session start via CLAUDE.md). If any context file is missing or unreadable, report which and stay out of LaC mode.
+`!reboot` - re-read CLAUDE.md and llm_compose.md and reload all context files. If any context file is missing or unreadable, report which.
 
-`!load [path]` - load a topic for reading/working (read-only, runs immediately).
-- Path is a TOPIC → load ONLY its mem_<name>.md into context, then list the subtopic folder NAMES (names only). Do NOT load any subtopic into the head. mem_<name>.md is a ROUTING INDEX (where each thing lives → which subtopic) PLUS a light full-topic summary kept in head at all times. Questions here are answered in SEARCH mode: read the route, then run !search automatically over the relevant subtopic(s). Never swallow a whole topic.
-- Path is a SUBTOPIC (`topic/sub`) → WORKING mode: load the topic-root mem_<name>.md fully AND that subtopic's mem_<sub>_<name>.md fully into the head, so you can co-author / discuss it freely. Its context dumps (PDF/docx/images) are NOT swallowed - they stay grep-only via !search.
-- Path is `topic/all` → force full load of every mem_*.md recursively (small topics only, on purpose).
+`!load [path]`:
+- folder name is a topic name.
+- load only its mem_<name>.md and list the subtopic NAMES; do not load subtopics mem files. Use the route to find which subtopic holds the answer, run `!search` over it automatically, and answer from the hits; never swallow a whole topic.
+- `load topic/sub` → load the topic-root mem_<name>.md and that subtopic's mem_<sub>_<name>.md in full; its dumps stay grep-only via !search.
+- `load topic/all` → load every mem_*.md recursively. Warn about the increased token use and do not load the whole topic without confirmation.
 - No path → `Specify a path. Use !tree to browse.`
-- tasks.md is not auto-loaded; open it directly or via !load topic/sub. There is no root context/. Size guard: on load, check the memory file size. If it crosses ANY threshold (>500 lines, >30 KB, >15 session blocks), warn and suggest `!compress <topic>` or `!cleanup`. Suggestion only.
+- The topic-root tasks.md (if present) loads together with mem_<name>.md.
 
-`!search [query]` - read-only retrieval across the loaded topic. Runs IMMEDIATELY, never asks (read-only). Greps the topic's subtopic memory files and their context dumps for the query, reads ONLY the matching excerpts (line ranges), works from those. The engine invokes !search AUTOMATICALLY whenever a question needs material from a subtopic that is not fully loaded - it does not wait for the user to type it.
-- Citations [file, lines] are OPTIONAL: give them when pulling from context dumps (PDF/docx/etc.), when the user is studying, or on request. In ordinary conversation over already-loaded subtopic memory, answer naturally - no citation noise.
-- No query → operates on the current user question.
-- Query expansion (MANDATORY): never grep the user's literal words. First expand the query into synonyms, domain jargon, error strings, file paths, and other-language equivalents - using both the model's own knowledge and the topic's route keyword cloud - then grep the UNION (ripgrep alternation, case-insensitive: `rg -i "term1|term2|..."`). The model is the embedding, applied at query time; no vectors, no server.
-- Echo the expanded terms BEFORE the result (e.g. `searching: e1000e | TX hang | ethtool | offload`) so expansion is visible and verifiable, not an invisible promise.
-- On a hit, follow the block's [[wikilinks]] AND the topic's `## See also` section, pulling in linked neighbours and adjacent topics (associative graph expansion).
+`!search [query]` - Greps the topic's subtopic mem files and their dumps, reads ONLY the matching excerpts (line ranges), and works from those. The engine fires it AUTOMATICALLY whenever a question needs a subtopic that is not fully loaded.
+- Query expansion (MANDATORY): never grep the user's literal words. Expand into synonyms, jargon, error codes, file paths, and other-language equivalents (model knowledge + the route keyword-cloud), then grep the UNION (`rg -i "t1|t2|..."`). The model is the embedding, applied at search time - no vectors. Echo the expanded terms before the result (`searching: e1000e | TX hang | ethtool`), so the expansion is verifiable.
+- On a hit, follow the block's [[wikilinks]] and the topic's `## See also`, pulling in linked neighbours and adjacent topics.
+- Citations [file, lines] are optional: give them for dumps (PDF/docx), when the user is studying, or on request; in ordinary talk over loaded mem, skip the citation noise.
 
 `!save [topic] [path]` - save the current chat into the topic folder.
-Path resolution (no [path]): 1) pick the top folder by context (Work/Study/Life/Hobbies); 2) normalize the topic (lowercase, spaces→hyphens, strip special chars); 3) folder = [Top]/[topic]/.
 
-Naming convention (ALWAYS):
-- topic-root memory file: mem_<name>.md         (e.g. mem_hashi.md)
-- subtopic memory file:   mem_<sub>_<name>.md    (e.g. mem_monsters_hashi.md)
+Path (no [path]): top folder by context (Work/Study/Life/Hobbies) / normalize the topic (lowercase, spaces→hyphens, strip special chars) → [Top]/[topic]/.
 
-A topic is a FOLDER. It holds:
-- mem_<name>.md - ROUTING INDEX (where each thing lives → which subtopic) PLUS a light, always-in-head summary of the whole topic. ALWAYS present.
-- tasks.md - tasks SHARED across the topic (root only, never per-subtopic). Created ONLY when there are real tasks; never invent tasks the user didn't give.
-- subtopic folders - each holds its own mem_<sub>_<name>.md plus, optionally, its own context dumps. Subtopic mem files use headed paragraphs so !search greps them well.
-There is NO root-level context/. Every context dump belongs to a subtopic.
+A topic is a FOLDER holding:
+- mem_<name>.md - routing index (term → which subtopic) + a light always-in-head summary. ALWAYS present. Ends with a `## See also`: bidirectional links to adjacent topics ([[mem_<name>]] for a mem file, a plain path for a dump/external), each with a one-line why (a keyword bridge for !search).
+- tasks.md - tasks shared across the topic (root only, never per-subtopic). Created only when there are real tasks from user; never invent them.
+- subtopic folders - each with its own mem_<sub>_<name>.md (headed paragraphs, so !search greps them) plus optional context dumps. There is no root-level context/.
 
-Context dumps (PDF, docx, images, raw text):
-- READ-ONLY source material the user authored or collected. The engine reads and cites them but NEVER edits them.
-- Each dump goes INTO its own subtopic folder (e.g. a DHCP file → subtopic dhcp/), next to that subtopic's mem file, which references it.
-- For EACH dump the subtopic mem file carries a short description plus a keyword cloud of its CONTENT (terms, numbers, paths inside it), not just the file name; read diagram images via Read and describe them in words. The dump stays read-only - the cloud is its searchable twin.
+Naming (ALWAYS): root mem_<name>.md (e.g. mem_hashi.md); subtopic mem_<sub>_<name>.md (e.g. mem_monsters_hashi.md).
 
-Placement: before writing, the engine PROPOSES where the summary belongs - topic root or a specific subtopic (existing or new) - states it plainly, and waits for confirm/redirect.
-Write behavior:
-- Folder missing → create it + mem_<name>.md (add tasks.md / subtopics only if warranted)
-- File exists → read, then append to the end. NEVER overwrite. NEVER touch context dumps.
-- Route: summary → mem_<name>.md or the subtopic's mem_<sub>_<name>.md; tasks → topic-root tasks.md; context dumps → their own subtopic folder.
-- Also update the route in mem_<name>.md so !search can find newly added material.
-Multiple topics - STRICT separation (never mix): one self-contained summary per topic in its own folder; report what went where; ask only when a topic→folder mapping is genuinely unclear.
+Context dumps (PDF, docx, images, raw text) - read-only source the engine cites but NEVER edits. Each goes in its subtopic folder, referenced by that subtopic's mem with a short description + a keyword-cloud of its CONTENT (terms, numbers, paths inside, not just the filename). Build the cloud from what the engine can read: text natively, images and diagrams via Read, PDF page by page. For a file it cannot read (archive, db, audio/video, unknown binary), build it from the user's description and file metadata - never invent the contents.
+
+Write behaviour:
+- Placement: propose root vs a specific subtopic (existing or new), state it plainly, wait for confirm/redirect.
+- Folder missing → create it + mem_<name>.md (add tasks.md / subtopics only if warranted).
+- File exists → read, then append to the end. NEVER overwrite, NEVER touch dumps.
+- Route: summary → mem_<name>.md or the subtopic mem; tasks → root tasks.md; dump → its subtopic folder. Update the route in mem_<name>.md so !search finds the new material.
+- Multiple topics → STRICT separation: one self-contained summary per topic in its own folder; report what went where; ask only when the topic→folder mapping is unclear.
+- After the save, update core.md with anything that belongs in the user's standing context.
+
 Block format (memory files):
-  ## YYYY-MM-DD - [subtitle]
-  keywords: <synonyms, jargon, error strings, paths, other-language terms a future !search might use>
+  ## YYYY-MM-DD
+  ### [subtitle]
+  keywords: <synonyms, jargon, error codes, paths, other-language terms a future !search will hit>
   [summary; link related blocks via [[mem_<sub>_<name>]]]
   ---
-- The keywords line is the file-side semantic layer: it lets grep hit a block whose body uses different words than the query. Maintain it on EVERY !save (one line on a block you're already writing).
-- In mem_<name>.md each route carries a keyword cloud (term → which subtopic) so !search greps the right subtopic, not the whole topic.
-- End every mem_<name>.md with a `## See also` section: TWO-WAY [[links]] to neighbouring topics, each with a one-line why (the keyword bridge for !search). If you mention topic A in B, mention B in A. Use `[[mem_<name>]]` when the target is a mem file, a plain path when it is a dump or external topic.
-Then output: Saved / Topic / Files written / "To change path: !changepath" / "To change topic: !changetopic".
-Size guard: after writing, check the memory file size - warn >500 lines / >30 KB / >15 blocks; suggest !compress or !cleanup (suggestion only).
+One date header per day. A second save the same day adds another `### [subtitle]` under it, not a new date. Keep the keywords line on every block - grep needs it to hit a block whose body uses different words than the query.
 
-`!delete [path]` - soft-delete to trash/ (needs confirmation). The engine has no Bash and cannot move files itself - it states this plainly, outputs the ready-to-run `mv` command for the user to execute, and verifies after. Never hard-deleted; recover from trash. Canonical delete in LaC. See "Filesystem moves" below.
+Output: Saved / Topic / Files written  / "To change topic: !changetopic".
+Size guard: after writing, warn if the mem file passes >400 lines / >30 KB / >15 blocks; suggest !compress or !cleanup (suggestion only).
 
-`!path` - show this chat's saved path.
-`!changepath [new path]` - change this chat's saved path.
-`!focus` - bring the conversation back to the current chat's topic.
-`!topic` - show the saved file's topic.
-`!changetopic [new topic]` - change the topic.
-`!remind` - brief recap of this chat.
-`!cleanup [scope]` - STRUCTURAL Grimoire maintenance. NON-LOSSY: it never shortens, summarizes, or rewrites your notes - so moving folders around never costs you anything. If [scope] is omitted, FIRST ASK whether to run over the WHOLE Grimoire or only the CURRENT topic, and wait (`!cleanup all` = whole Grimoire; `!cleanup .` or `!cleanup <topic>` = that topic only). Actions:
-  • redistribute the topic's content into the right subtopics (move misplaced material into the subtopic's mem_<sub>_<name>.md where it belongs, creating a subtopic only when content warrants it) and update the route in mem_<name>.md to match;
-  • remove DUPLICATED information, keeping one canonical copy;
-  • prune COMPLETED tasks from tasks.md.
-NEVER touch context dumps - they are read-only source material.
-To condense or summarize bloated/stale notes, use !compress - that's the lossy counterpart, kept deliberately separate.
-Side-effect: show the whole plan as a diff and WAIT for confirmation; everything moved/removed is copied to trash.
-`!compress [topic]` - shrink a topic's memory files to save tokens (the LOSSY counterpart to !cleanup). Operates on mem_<name>.md and the subtopic mem_<sub>_<name>.md files. Keep the last 3-5 session blocks verbatim; for older or bloated fragments apply the action its TYPE calls for - STALE/completed/irrelevant → shorten to ONE sentence and merge into `## Digest (up to YYYY-MM-DD)`; CURRENT but bloated → full resummarization without losing any fact/decision. Side-effect: show a diff and wait for confirmation. Before writing, copy the original to trash/<topic>-precompress-YYYY-MM-DD.md. Only memory files are touched - tasks.md (handled by !cleanup) and context dumps are left untouched.
 
-`!update` - check the installed version against the repo and, on confirmation, update. The check is read-only and runs at once; the update waits for a yes.
-- Check phase (runs immediately): read the local `version` from llm_compose.md, fetch the latest version and CHANGELOG from github.com/diranix/grimoire, and show current vs latest plus what changed. The CHANGELOG is always shown. If the local version is already current, say so and stop - a clean no-op, nothing written.
-- Update phase (waits for confirmation): if a newer version exists, ask whether to update. Without a yes, nothing changes. On yes, the engine cannot run the updater itself (Bash is denied) - it outputs ONE ready-to-run terminal command that fetches `lac-update.sh` from the repo and runs it. The shell, outside the deny sandbox, updates the engine files (including L1/L2) idempotently, preserves all user data (grimoire, core.md, the admin name, the active persona), and backs up the old files to trash/ first. After it finishes, run `!reboot`.
-- Offline: report that the check cannot run; show the local version and the repo link.
-
-`!tree` - show the Grimoire structure.
-`!help` - list all commands, one per line.
-`!exit` - leave LaC mode.
-
----
+`!delete [path]` - soft-delete to trash/ (needs confirmation). No hard-delete; recover from trash. The canonical delete in LaC.
 
 ## Filesystem moves - the engine has no Bash
 
-The engine cannot move, rename, or delete files itself (Bash is denied; only Read/Grep/Glob/Write/Edit are available). Whenever a command must physically move or delete a file (`!delete`, and the move/copy-to-trash steps of `!cleanup` and `!compress`), the engine does NOT fake it or silently skip it. It:
-1. states plainly that it cannot move files itself;
-2. outputs the full, ready-to-run terminal command, quoted, relative to the LaC root;
-3. waits for the user to run it, then verifies the result.
+Bash is denied (only Read/Grep/Glob/Write/Edit). For any physical move or delete (`!delete`, and the copy-to-trash steps of `!cleanup` / `!compress`), the engine does not fake or skip it: it states it cannot move files itself, emits the full ready command quoted and relative to the LaC root, waits for the user to run it, then verifies. Creating new files it does itself; only moves and deletes hand off.
 
-Canonical soft-delete template:
-    mv "<path>" "trash/<name>-<reason>-YYYY-MM-DD"
+Soft-delete template: `mv "<path>" "trash/<name>-<reason>-YYYY-MM-DD"`
 
-Writing NEW files (Write/Edit) the engine still does itself; only moves and deletes hand off to the terminal. This is by design: with Bash denied, the tool-level lock on L1/L2 is a real wall, not a bypassable one.
-
+`!path` - show this chat's saved path.
+`!focus` - bring the conversation back to the current chat's topic.
+`!topic` - show the saved file's topic.
+`!changetopic [topic|path]` - physically relocate this chat's topic folder (name auto-resolved, or explicit path). Folder exists → structural move: no Bash, so emit the ready `mv "<old>" "<new>"` (quoted, relative to the LaC root), wait, verify, re-point the saved path, and fix any [[wikilinks]] / `## See also` that named the old path. Not yet saved → no move, just set the next `!save` target.
+`!remind` - brief recap of this chat.
+`!cleanup [scope]` - structural Grimoire maintenance. NON-LOSSY: never shortens, summarizes, or rewrites notes (to condense, use !compress - the lossy counterpart). No scope → first ask whole Grimoire vs current topic and wait (`!cleanup all` = whole; `!cleanup .` or `!cleanup <topic>` = that topic). Actions: redistribute content into the right subtopics (create one only when warranted) and update the route in mem_<name>.md; remove duplicated info, keeping one canonical copy; prune completed tasks from tasks.md. Never touch context dumps. Side-effect: show the whole plan as a diff and WAIT for confirmation; everything moved or removed is copied to trash.
+`!compress [topic]` - shrink a topic's memory files to save tokens (the LOSSY counterpart to !cleanup). Operates on mem_<name>.md and the subtopic mems: keep the last 3-5 blocks verbatim; older or bloated fragments by TYPE - stale/completed → one sentence merged into `## Digest (up to YYYY-MM-DD)`; current but bloated → full resummarization losing no fact or decision. Touches only memory files (tasks.md and dumps untouched). Side-effect: copy the original to trash/<topic>-precompress-YYYY-MM-DD.md first, show a diff, wait for confirmation.
+`!update` - check the installed version against the repo, update only on consent.
+- Show (immediate): read the local `version` from llm_compose.md, fetch the latest version + CHANGELOG from github.com/diranix/grimoire, show current vs latest and what changed (CHANGELOG always shown). If already current, say so and stop.
+- Update (waits for confirmation): if a newer version exists, ask. The update runs OUTSIDE the sandbox via the external installer-updater - it idempotently pulls the latest files including L1/L2; the engine never writes L1/L2 itself (deny + Bash off). On yes, hand off to the updater or show the command to launch it.
+- Offline: report the check cannot run; show the local version + repo link.
+- `!help` - list every command, one sentence each, grouped read-only vs side-effect (mirrors the pause table). Names with a one-line gloss only, no full syntax. Read-only.
+- `!tree [topic]` - show the Grimoire skeleton: topic and subtopic folders with their mem_<name>.md paths, no bodies, no dumps, no trash (same discipline as session start). No [topic] → the whole tree under grimoire/{Work,Study,Life,Hobbies}; [topic] → just that branch. Read-only.
 ---
 
 ## Spells
 
 `!spells` - list the available spells in `spells/` (subfolder names only, one per line). Empty or missing → `No spells installed. Drop one in spells/.`
 
-`!cast [name]` - cast a spell: load it into the active context and apply it for the rest of the session (until a new !cast or a fresh session). Path: `spells/[name]/`. Read the main file (the file in the spell's root - extras may live in subfolders such as references/) plus any references; skip binaries. No [name] → behaves like !spells. Folder missing → `Spell "[name]" not found. Use !spells.` A spell is BEHAVIOR, not data: unlike Grimoire content, its main file defines HOW to act. limits.md (L1) still outranks any spell - a spell never overrides the limits or the safety floor.
-
-One spell ships bundled: **`noslop`** (`!cast noslop`) - a deslop pass that strips machine-generated tells out of prose before you ship a deliverable (report, README, message). It is a self-contained single file. Drop your own spells into `spells/` the same way.
-
----
-
-## Grimoire - placement logic
-
-- Work, projects, code, infrastructure → `Work/[topic]/`
-- Studies, courses, exams → `Study/[topic]/`
-- Personal, finance, plans → `Life/[topic]/`
-- Hobbies, games, leisure → `Hobbies/[topic]/`
-
-One topic = one folder named [topic], containing:
-- mem_<name>.md - routing index + light full-topic summary (always present)
-- tasks.md - shared tasks, root only, only when real tasks exist
-- subtopic folders - each with its own mem_<sub>_<name>.md and optionally its own context dumps (PDF/docx/images/text). Subtopic mem files use headed paragraphs so !search can grep them.
-There is NO root-level context/. Every context dump lives inside the subtopic it belongs to. Context dumps are READ-ONLY - the engine reads and cites them, never edits them.
-!load topic → mem_<name>.md + subtopic names, then auto !search (browse/search mode). !load topic/sub → topic-root mem + that subtopic's mem fully in head (working mode); its context dumps stay grep-only. !load topic/all → every mem_*.md recursively (small topics only). Saves append, never overwrite. Naming: mem_<name>.md, mem_<sub>_<name>.md.
-
-## Paths
-
-Relative to `grimoire/`. Separator - `/`.
+`!cast [name]` - load a spell from `spells/[name]/` and apply it for the rest of the session (until a new !cast or a fresh session). Read the main file (in the spell root; extras live in subfolders like references/) plus its references; skip binaries. A spell is BEHAVIOR, not data - its main file defines HOW to act - but limits.md (L1) outranks it; a spell never overrides the limits or the safety floor. No [name] → behaves like !spells. Missing folder → `Spell "[name]" not found. Use !spells.`

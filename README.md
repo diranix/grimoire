@@ -56,9 +56,9 @@ Open an empty folder as a Claude Code project (terminal: `cd` in and run `claude
 https://raw.githubusercontent.com/diranix/grimoire/main/lac-setup.md
 ```
 
-Claude Code reads `lac-setup.md` and runs it. It asks once for your admin name, then builds the whole structure from the templates inside that file: the four governance files, the `.claude/` lock and hooks, a neutral default persona, the bundled `noslop` spell, and an empty `grimoire/`. Everything is written locally; nothing leaves your machine.
+Claude Code reads `lac-setup.md` and runs it. It asks once for your ward name, then fetches every technical file from the repo by its raw URL and writes it locally - the four governance files, the `.claude/` lock and hooks, a neutral base persona, the bundled `noslop` spell, and an empty `grimoire/`. The installer carries no file bodies of its own: it lists what to fetch and where it goes, so the repo copies are the single source of truth and what you install matches the repo with nothing to drift. The fetch reads from GitHub; nothing of yours leaves your machine.
 
-The installer is idempotent. Run it again on a folder that already has LaC and it refreshes the engine files while leaving your data alone - it never overwrites `grimoire/`, `core.md`, your admin name, or your active persona.
+The installer is idempotent. Run it again on a folder that already has LaC and it refreshes the engine files while leaving your data alone - it never overwrites `grimoire/`, `core.md`, your ward name, or your active persona.
 
 After install, start a fresh session in the same folder and it enters LaC mode on its own. The boot lives in `CLAUDE.md` and a `SessionStart` hook, both of which run only inside a Claude Code project session for this folder. A generic Cowork or assistant chat that has not opened the folder stays an ordinary assistant - no boot line, no persona, no commands. Run `!reboot` to reload after you edit a LaC file outside the session.
 
@@ -68,7 +68,7 @@ Run `!update` in a LaC session. It reads your local version, fetches the latest 
 
 If a newer version exists and you confirm, the engine hands you one terminal command. It cannot apply the update itself: `.claude/settings.json` denies Bash and locks the L1/L2 files, so the engine has no way to rewrite its own governance - the same wall that stops a misbehaving agent stops the updater. The command fetches `lac-update.sh` from the repo and runs it in your shell, outside that wall, where it can refresh the locked files.
 
-`lac-update.sh` is careful by design. It refreshes only LaC's own engine files (`limits.md`, `commands.md`, `CLAUDE.md`, `.claude/settings.json`, `.claude/no-slop-scan.py`) and bumps the version line in `llm_compose.md`, keeping your admin name and persona pointer. It never touches `grimoire/`, `personas/`, or `spells/`, so your notes, your active persona, and your own spells survive. It copies every replaced file to `trash/` first. When it finishes, run `!reboot`.
+`lac-update.sh` is careful by design. It refreshes only LaC's own engine files (`limits.md`, `commands.md`, `CLAUDE.md`, `.claude/settings.json`, `.claude/no-slop-scan.py`, and the bundled `spells/noslop/noslop.md`) and bumps the version line in `llm_compose.md`, keeping your ward name and persona pointer. It never touches `grimoire/`, never overwrites a persona (it only restores `base_persona.md` when that file is missing), and leaves your own spells alone - only the bundled `noslop` spell is refreshed, because LaC maintains it. So your notes, your active persona, and your own spells survive. It copies every replaced file to `trash/` first, so even an edited `noslop` is recoverable there. When it finishes, run `!reboot`.
 
 ### Keep your Grimoire private
 
