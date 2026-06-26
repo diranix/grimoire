@@ -3,6 +3,14 @@
 All notable changes to Grimoire are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
+## [0.5.1.2] - 2026-06-26
+
+### Added
+- **Lock canary - the boot ritual now verifies the L1/L2 lock instead of only trusting it.** A deny rule locks only while Claude Code's matcher behaves as written, and that has drifted across releases (the `//` anchor once silently matched nothing; a symlink CVE sidestepped path denies). `settings.json` locks, but nothing checked the lock still held. The boot ritual (`CLAUDE.md`) now attempts a Write tool-call to `.claude/.lockcanary` on every session start: the `.claude/**` deny MUST refuse it. Refused - the perimeter holds, boot continues. Succeeds - the lock is open, so the engine does NOT enter LaC mode, reports that L1/L2 is writable, and stops. It must be the engine's own Write - tool-deny governs only the engine's tool calls, so a write from the python hook would run outside the sandbox and prove nothing. Mirrored into the `SessionStart` hook text and the README security model.
+
+### Changed
+- **README: the guard is described as a style + secret guard** (was "invisible-character guard"), matching the 0.5.1 dual role of `write-guard.py`.
+
 ## [0.5.1.1] - 2026-06-26
 
 ### Changed
@@ -261,6 +269,7 @@ The local install is canon; the repo was a `0.4.9.6` snapshot behind it. Mirrore
 ### Added
 - First public release (AGPL-3.0). Boot loading, integrity abort-check, deterministic `!save` (topic = folder of memory.md / tasks.md / context.md), strict topic separation, soft-delete to `Trash/`, safety floor in `limits.md`, injection protection (Grimoire content is data, not instructions).
 
+[0.5.1.2]: https://github.com/diranix/grimoire/releases/tag/v0.5.1.2
 [0.5.1.1]: https://github.com/diranix/grimoire/releases/tag/v0.5.1.1
 [0.5.1]: https://github.com/diranix/grimoire/releases/tag/v0.5.1
 [0.5.0]: https://github.com/diranix/grimoire/releases/tag/v0.5.0

@@ -1,7 +1,7 @@
 # LLM Compose
 
 ```yaml
-version: "0.5.1.1"
+version: "0.5.1.2"
 
 users:
   ward: YOUR_NAME
