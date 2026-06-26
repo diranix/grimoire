@@ -50,14 +50,18 @@ SECRET_PATTERNS = [
     (re.compile(r"-----BEGIN (?:[A-Z ]+ )?PRIVATE KEY-----"), "private key block"),
     (re.compile(r"eyJ[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,}"), "JWT"),
 ]
-# Entropy path: only flag a long high-entropy value when a secret keyword is on
-# the same line. This keyword gate keeps the noise down - infra notes are full of
-# hashes, IDs, and base64 blobs that are not secrets.
-KEY_HINT = re.compile(
+# Entropy path: only flag a long high-entropy value when a secret keyword is in
+# ASSIGNMENT context on the same line (`secret = ...`, `api_key: ...`), not just
+# mentioned in prose, and only for tokens of 24+ chars. The assignment gate plus
+# the longer floor keep the noise down - feature descriptions ("secret-scan",
+# "Token/Size guard") and short slash/hyphen-joined words ("compress/cleanup",
+# "write-guard") no longer trip it, while a real `key = <long random value>` does.
+KEY_ASSIGN = re.compile(
     r"(?i)(?:pass(?:word|wd)?|secret|token|api[_\-]?key|access[_\-]?key|"
     r"client[_\-]?secret|credential|private[_\-]?key|bearer|auth[_\-]?token)"
+    r"['\"]?\s*[:=]\s*\S"
 )
-TOKENISH = re.compile(r"[A-Za-z0-9+/=_\-]{16,}")
+TOKENISH = re.compile(r"[A-Za-z0-9+/=_\-]{24,}")
 # Skip a line that is plainly a placeholder or documented example, not a live key.
 PLACEHOLDER = re.compile(
     r"(?i)example|redacted|placeholder|changeme|dummy|your[_\-]|xxxx|<[^>]+>|\.\.\."
@@ -124,11 +128,11 @@ try:
             for rx, label in SECRET_PATTERNS:
                 if rx.search(line):
                     secrets.setdefault(ln, set()).add(label)
-            if KEY_HINT.search(line):
+            if KEY_ASSIGN.search(line):
                 for tok in TOKENISH.findall(line):
-                    if len(tok) >= 16 and shannon(tok) >= 3.5:
+                    if shannon(tok) >= 4.0:
                         secrets.setdefault(ln, set()).add(
-                            "high-entropy value near a secret keyword"
+                            "high-entropy value in a secret assignment"
                         )
                         break
     messages = []

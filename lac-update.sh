@@ -100,3 +100,13 @@ fi
 
 echo "Done. Backup of replaced files: $BK"
 echo "Now run !reboot in the LaC session (or start a fresh one)."
+echo
+echo "----- Grimoire format note -----"
+echo "This update refreshes the ENGINE only - it never rewrites your notes."
+echo "Notes written before 0.5.0 may use the old block format (no 'keywords:'"
+echo "line, single '## date' header). They still load, but !search hits them"
+echo "worse without a keywords line. To bring a topic to the current standard,"
+echo "do it yourself or ask the LLM in a session, e.g.:"
+echo "  \"migrate <topic> to the current block format (add a keywords line to"
+echo "   each block, back up to trash first, show a diff, wait for my OK)\"."
+echo "--------------------------------"

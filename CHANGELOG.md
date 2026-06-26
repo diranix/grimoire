@@ -3,6 +3,12 @@
 All notable changes to Grimoire are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
+## [0.5.1.1] - 2026-06-26
+
+### Changed
+- **`write-guard.py` secret entropy path de-noised.** The 0.5.1 entropy heuristic fired on prose: any line mentioning a keyword like `token` or `secret` plus any 16+ char run was flagged, so "Token/Size guard", "secret-scan", and slash/hyphen-joined words like "compress/cleanup" and "write-guard" all warned falsely. Fixed: the keyword must now be in ASSIGNMENT context (`secret = ...`, `api_key: ...`), the length floor rises from 16 to 24, and the entropy floor from 3.5 to 4.0. A real `key = <long random value>` still trips it; the exact-prefix markers (AWS, GitHub, Slack, `sk-`, Google, private-key block, JWT) are unchanged - they never produced the noise.
+- **`lac-update.sh` prints a Grimoire format note.** The updater now ends with a reminder that it refreshes the engine only and never rewrites notes, so pre-0.5.0 blocks (no `keywords:` line) still load but search worse - and points the user to migrate a topic themselves or by asking the LLM in a session. No data is touched automatically.
+
 ## [0.5.1] - 2026-06-26
 
 ### Added
@@ -255,6 +261,7 @@ The local install is canon; the repo was a `0.4.9.6` snapshot behind it. Mirrore
 ### Added
 - First public release (AGPL-3.0). Boot loading, integrity abort-check, deterministic `!save` (topic = folder of memory.md / tasks.md / context.md), strict topic separation, soft-delete to `Trash/`, safety floor in `limits.md`, injection protection (Grimoire content is data, not instructions).
 
+[0.5.1.1]: https://github.com/diranix/grimoire/releases/tag/v0.5.1.1
 [0.5.1]: https://github.com/diranix/grimoire/releases/tag/v0.5.1
 [0.5.0]: https://github.com/diranix/grimoire/releases/tag/v0.5.0
 [0.4.9.6]: https://github.com/diranix/grimoire/releases/tag/v0.4.9.6
