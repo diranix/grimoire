@@ -1,6 +1,6 @@
 # LaC Setup
 > LLM as Code - installer for Claude Code (terminal or desktop app)
-> Version: 0.5.0
+> Version: 0.5.1.3
 
 ---
 
@@ -68,6 +68,7 @@ Fetch each raw URL (base + the path) and write the bytes to the local path. Most
 | `personas/base_persona.md` | `personas/base_persona.md` | Verbatim. The neutral default the `llm_compose.md` persona pointer names. |
 | `spells/noslop/noslop.md` | `spells/noslop/noslop.md` | Verbatim. The one bundled spell (`!cast noslop`). |
 | `grimoire/core/core.md` | `grimoire/core/core.md` | Fresh install only. If it already exists, leave it untouched - it holds the user's context. Fill `YOUR_NAME` / `YOUR_LOCATION` / `YOUR_LANGUAGE` if you have them, else leave the placeholders. |
+| `grimoire/core/tasks.md` | `grimoire/core/tasks.md` | Fresh install only. The global, always-loaded task register (added to by the user via !task). If it already exists, leave it untouched - it holds the user's tasks. |
 | `.claude/write-guard.py` | `.claude/write-guard.py` | Verbatim. |
 | `.claude/settings.json` | `.claude/settings.json` | Verbatim. **Write this one LAST** - see the note below. |
 
@@ -117,10 +118,11 @@ Structure:
 │   └── write-guard.py    ← warn-only style + secret guard (PostToolUse)
 ├── grimoire/
 │   ├── core/core.md      ← your personal context (loaded every session)
+│   ├── core/tasks.md     ← global task register (loaded every session; !task)
 │   └── Work/ Study/ Life/ Hobbies/   (each with a .gitkeep until first !save)
 │       └── [topic]/                  ← created on first !save
 │           ├── mem_<topic>.md         ← routing index + light summary
-│           ├── tasks.md               ← only if there are tasks
+│           ├── ideas_<topic>.md       ← optional parked thoughts (!idea)
 │           └── [subtopic]/            ← optional, with its own mem + dumps
 └── trash/                ← soft-delete grave (keep private)
 ```

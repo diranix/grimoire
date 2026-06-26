@@ -3,7 +3,13 @@
 All notable changes to Grimoire are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
-## [0.5.1.2] - 2026-06-26
+## [0.5.1.3] - 2026-06-27
+
+### Changed
+- **Tasks go global again; per-topic `tasks.md` becomes per-topic `ideas_<name>.md`.** The 0.4.9.5 move to per-topic tasks meant work scattered across topic files the user forgot to open. Tasks return to a single always-loaded register, `grimoire/core/tasks.md` - it ships with the `core/` template and loads every session with the rest of `core/`, so open work is in head from the first message. Each entry is a short action plus a `[[mem_<sub>]]` link to where the detail lives.
+- **Both tasks and ideas are now human-only - the engine never writes them on its own.** Tasks are added solely by the user via the new `!task`; the engine does not invent, propose, or auto-append one. Loose, non-critical thoughts and maybe-laters move to a per-topic `ideas_<name>.md` (topic root, never per-subtopic), written solely by the new `!idea`. `!save` no longer auto-routes tasks or ideas; `!cleanup` no longer prunes tasks and never touches `tasks.md` or `ideas_<name>.md`; `!compress` leaves both untouched. `!search` and `!load` now cover the topic ideas file. Mirrored across `commands.md`, the `core/` template, `lac-setup.md`, and the README.
+
+
 
 ### Added
 - **Lock canary - the boot ritual now verifies the L1/L2 lock instead of only trusting it.** A deny rule locks only while Claude Code's matcher behaves as written, and that has drifted across releases (the `//` anchor once silently matched nothing; a symlink CVE sidestepped path denies). `settings.json` locks, but nothing checked the lock still held. The boot ritual (`CLAUDE.md`) now attempts a Write tool-call to `.claude/.lockcanary` on every session start: the `.claude/**` deny MUST refuse it. Refused - the perimeter holds, boot continues. Succeeds - the lock is open, so the engine does NOT enter LaC mode, reports that L1/L2 is writable, and stops. It must be the engine's own Write - tool-deny governs only the engine's tool calls, so a write from the python hook would run outside the sandbox and prove nothing. Mirrored into the `SessionStart` hook text and the README security model.
