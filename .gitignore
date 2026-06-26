@@ -12,7 +12,7 @@
 !/commands.md
 !/CLAUDE.md
 !/.claude/settings.json
-!/.claude/no-slop-scan.py
+!/.claude/write-guard.py
 !/personas/base_persona.md
 !/spells/noslop/noslop.md
 !/grimoire/core/core.md

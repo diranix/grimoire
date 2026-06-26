@@ -17,7 +17,7 @@ TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 # it is missing. Every replaced file is copied to trash/ first.
 SYSTEM_FILES=(
   "limits.md" "commands.md" "CLAUDE.md"
-  ".claude/settings.json" ".claude/no-slop-scan.py"
+  ".claude/settings.json" ".claude/write-guard.py"
   "spells/noslop/noslop.md"
 )
 
@@ -63,6 +63,20 @@ write_file() {
 }
 
 for f in "${SYSTEM_FILES[@]}"; do write_file "$f"; done
+
+# Engine files retired or renamed in a past version. Pulling the latest only
+# writes the new name, so the stale live copy would sit orphaned next to it (and
+# stay writable once settings.json no longer denies it). Back it up and remove
+# it. 0.5.1: no-slop-scan.py became write-guard.py.
+RETIRED_FILES=( ".claude/no-slop-scan.py" )
+for f in "${RETIRED_FILES[@]}"; do
+  dst="$PROJECT_DIR/$f"
+  [ -e "$dst" ] || continue
+  mkdir -p "$BK/$(dirname "$f")"; cp -p "$dst" "$BK/$f"
+  unlock "$dst" >/dev/null
+  rm -f "$dst"
+  echo "removed (retired): $f"
+done
 
 # Personas are user space - never overwrite one. Restore base_persona.md only
 # when it is missing (a broken install); an edited or replaced persona survives.

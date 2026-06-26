@@ -68,7 +68,7 @@ Fetch each raw URL (base + the path) and write the bytes to the local path. Most
 | `personas/base_persona.md` | `personas/base_persona.md` | Verbatim. The neutral default the `llm_compose.md` persona pointer names. |
 | `spells/noslop/noslop.md` | `spells/noslop/noslop.md` | Verbatim. The one bundled spell (`!cast noslop`). |
 | `grimoire/core/core.md` | `grimoire/core/core.md` | Fresh install only. If it already exists, leave it untouched - it holds the user's context. Fill `YOUR_NAME` / `YOUR_LOCATION` / `YOUR_LANGUAGE` if you have them, else leave the placeholders. |
-| `.claude/no-slop-scan.py` | `.claude/no-slop-scan.py` | Verbatim. |
+| `.claude/write-guard.py` | `.claude/write-guard.py` | Verbatim. |
 | `.claude/settings.json` | `.claude/settings.json` | Verbatim. **Write this one LAST** - see the note below. |
 
 **Write `.claude/settings.json` last.** It denies Bash and locks the L1/L2 files. Once it is in effect the engine can no longer freely write the rest, so writing it last keeps the fetch-and-write loop open until everything else is in place. After it lands, the locks take effect on the next session.
@@ -79,7 +79,7 @@ Re-running this installer must never duplicate files or clobber data. Same path 
 
 - **Never overwrite user data.** Leave exactly as they are: everything under `grimoire/` (including `grimoire/core/core.md`), `.claude/settings.local.json`, any persona the user added, any user-added spell.
 - **Preserve choices in `llm_compose.md`.** On update keep the existing `ward:` name and the `context.persona` pointer; refresh only the rest of the file from the repo copy.
-- **Refresh engine files to the latest.** These are not user-editable, so refreshing them is the point of an update: `limits.md`, `commands.md`, `CLAUDE.md`, `.claude/settings.json`, `.claude/no-slop-scan.py`, and the bundled `spells/noslop/noslop.md`.
+- **Refresh engine files to the latest.** These are not user-editable, so refreshing them is the point of an update: `limits.md`, `commands.md`, `CLAUDE.md`, `.claude/settings.json`, `.claude/write-guard.py`, and the bundled `spells/noslop/noslop.md`.
 - **Personas are user space.** Never overwrite a persona on update. Restore `personas/base_persona.md` only if it is missing (a broken install); if it is present, leave it exactly as it is, edited or not. This matches what `lac-update.sh` does.
 - **The locked-file caveat.** On a project that already has `.claude/settings.json`, its deny rules block the engine from rewriting the locked files (`llm_compose.md`, `limits.md`, `commands.md`, `CLAUDE.md`, `.claude/**`). That is the security model working, not a failure. When a write is denied during an update, do not error out: report it and output a ready-to-run terminal command that writes the fetched content, the same way `!delete` hands off `mv`, so the user applies it outside the sandbox. The standalone updater (`lac-update.sh`) does this wholesale.
 - **Folders:** create only if missing.
@@ -114,7 +114,7 @@ Structure:
 │   └── noslop/noslop.md  ← bundled deslop spell (!cast noslop)
 ├── .claude/
 │   ├── settings.json     ← hardened lock (L1/L2 + .claude + Bash off) + boot hook
-│   └── no-slop-scan.py   ← warn-only invisible-char guard (PostToolUse)
+│   └── write-guard.py    ← warn-only style + secret guard (PostToolUse)
 ├── grimoire/
 │   ├── core/core.md      ← your personal context (loaded every session)
 │   └── Work/ Study/ Life/ Hobbies/   (each with a .gitkeep until first !save)

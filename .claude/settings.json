@@ -18,8 +18,8 @@
             "Write(/.claude/settings.json)",
             "Edit(/.claude/settings.local.json)",
             "Write(/.claude/settings.local.json)",
-            "Edit(/.claude/no-slop-scan.py)",
-            "Write(/.claude/no-slop-scan.py)"
+            "Edit(/.claude/write-guard.py)",
+            "Write(/.claude/write-guard.py)"
         ]
     },
     "hooks": {
@@ -39,7 +39,7 @@
                 "hooks": [
                     {
                         "type": "command",
-                        "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/no-slop-scan.py\"",
+                        "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/write-guard.py\"",
                         "timeout": 10
                     }
                 ]

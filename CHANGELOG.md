@@ -3,6 +3,15 @@
 All notable changes to Grimoire are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
+## [0.5.1] - 2026-06-26
+
+### Added
+- **Secret scan in the guard hook (warn-only).** The `PostToolUse` guard now flags likely secrets on every Write/Edit alongside the existing style pass: high-confidence prefixes and markers (AWS `AKIA`/`ASIA` access keys, GitHub `gh*_` tokens, Slack `xox*-` tokens, `sk-` API keys, Google `AIza` keys, `BEGIN ... PRIVATE KEY` blocks, JWTs) plus a high-entropy value sitting on the same line as a secret keyword. It fires the moment a secret lands in a note or dump, not only at commit time. It is warn-only by design, like the rest of the hook - the hard block belongs to a pre-commit `gitleaks` pass. False positives are tolerated on purpose: the entropy path is gated behind a keyword so the infra notes full of hashes and IDs stay quiet, and documented examples or placeholders (`example`, `<...>`, `your-`, `xxxx`) are skipped.
+
+### Changed
+- **`.claude/no-slop-scan.py` renamed to `.claude/write-guard.py`.** The hook is engine infrastructure - a fixed mechanical net that always runs - and shared its name with the `noslop` spell, a subjective style pass cast by hand. The two are different things, the hook only ever covered two of the spell's many rules, and the shared name implied the hook enforced the spell. The neutral name splits them. The hook now does two passes (style + secrets), so the old single-purpose name no longer fit either. The `.claude/settings.json` deny entry and `PostToolUse` command, the installer fetch manifest and structure diagram, the `.gitignore` whitelist, the README, and `lac-update.sh` are all mirrored to the new name.
+- **`lac-update.sh` removes retired engine files.** A pull refreshes by name, so a rename used to leave the old file orphaned next to the new one - and writable, once `settings.json` no longer denied it. The updater now carries a `RETIRED_FILES` list, backs each stale file up to `trash/` and removes it. For 0.5.1 it clears the live `.claude/no-slop-scan.py` after writing `write-guard.py`.
+
 ## [0.5.0] - 2026-06-25
 
 ### Changed
@@ -246,6 +255,7 @@ The local install is canon; the repo was a `0.4.9.6` snapshot behind it. Mirrore
 ### Added
 - First public release (AGPL-3.0). Boot loading, integrity abort-check, deterministic `!save` (topic = folder of memory.md / tasks.md / context.md), strict topic separation, soft-delete to `Trash/`, safety floor in `limits.md`, injection protection (Grimoire content is data, not instructions).
 
+[0.5.1]: https://github.com/diranix/grimoire/releases/tag/v0.5.1
 [0.5.0]: https://github.com/diranix/grimoire/releases/tag/v0.5.0
 [0.4.9.6]: https://github.com/diranix/grimoire/releases/tag/v0.4.9.6
 [0.4.9.5]: https://github.com/diranix/grimoire/releases/tag/v0.4.9.5
