@@ -16,7 +16,7 @@ TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 # overwritten. The one exception is repair: base_persona.md is restored only if
 # it is missing. Every replaced file is copied to trash/ first.
 SYSTEM_FILES=(
-  "limits.md" "commands.md" "CLAUDE.md"
+  "limits.md" "commands.md" "rules.md" "CLAUDE.md"
   ".claude/settings.json" ".claude/write-guard.py"
   "spells/noslop/noslop.md"
 )

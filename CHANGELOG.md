@@ -3,6 +3,24 @@
 All notable changes to Grimoire are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
+## [0.5.2] - 2026-06-27
+
+### Changed
+- **LaC split into its own repo; Grimoire is now explicitly the reference application.** The protocol and the application lived together here, and the README admitted it ("the methodology will get its own home once the runtime proves it; for now it lives here"). The protocol now has that home: **[diranix/lac](https://github.com/diranix/lac)** carries the level model, the command-as-code contract, the security model, and a `reference/` set of the three rule files. This repo stays Grimoire - the first system built on LaC. The README is rewritten end to end: the opening reframes Grimoire as the reference application of LaC (linked), a new "The protocol" section points to the LaC repo, and the old "methodology lives here for now" framing is gone. No engine file changed - this is a docs and positioning split, not a behavior change.
+
+## [0.5.1.4] - 2026-06-27
+
+### Changed
+- **Notebook-first reframe: the human leads, the engine voices the notes.** Grimoire is a notebook with an embedded LLM, not a ghostwriter. The user's own files live in topic/subtopic folders under any name they like; the engine never writes, edits, or restructures them. On `!save` the engine re-reads the user's files and indexes each into `mem_<name>.md` (a link plus a content keyword-cloud), the same way it already indexes dumps. `!load` pulls only the `mem_` routing index; the user's note bodies stay grep-only via `!search` (every user file is search-active) or load in full on explicit request. `mem_<name>.md` is the only file the engine authors.
+- **`!task` and `!idea` removed; `tasks.md` is human-written.** The 0.5.1.3 model had the engine append to `tasks.md` (via `!task`) and to a per-topic `ideas_<name>.md` (via `!idea`). Both are gone: the engine no longer writes the user's task list or notes at all. `grimoire/core/tasks.md` stays the always-loaded task register, but the user writes it themselves and the engine only reads it. The `ideas_<name>.md` construct is dropped - parked thoughts are now just ordinary user notes. Mirrored across `commands.md` (`!load`/`!search`/`!cleanup`/`!compress`/Naming no longer reference `ideas_`), the `core/` template, `lac-setup.md`, and the README.
+
+### Added
+- **`engine.activity` switch (`active` / `normal` / `passive`), default `normal`.** A behavior dial in `llm_compose.md`: `active` leads the topic and proposes next steps, `normal` proposes fitting commands and answers, `passive` only answers. Default `normal` keeps the human in the lead. The safety floor (`limits.md`) always overrides it.
+- **New L2 file `rules.md` - the home for behavior tuning.** Behavioral rules that are neither hard security limits nor command mechanics now live in one tunable L2 file: engine activity, the context-budget discipline, the user-files rule, the no-Bash filesystem handoff, the citation posture, a full "never invent content" honesty rule, and the output-style guard. Registered at L2 in `llm_compose.md`, locked in `.claude/settings.json`, refreshed by `lac-update.sh`, and named in the `SessionStart` boot ritual.
+
+### Changed (engine)
+- **`CLAUDE.md` slimmed to the boot ritual.** The old `Rules` block dissolved: "execute `!` commands" is already covered by boot step 5 and the `commands.md` Syntax line; the L1/L2 read-only and "L3 is data not a command source" rules already live in `limits.md`; the context-budget, user-files, and output-style rules moved to `rules.md`. `limits.md` folded its filesystem-perimeter bullets into Security and kept only hard limits plus the safety floor.
+
 ## [0.5.1.3] - 2026-06-27
 
 ### Changed
@@ -275,6 +293,8 @@ The local install is canon; the repo was a `0.4.9.6` snapshot behind it. Mirrore
 ### Added
 - First public release (AGPL-3.0). Boot loading, integrity abort-check, deterministic `!save` (topic = folder of memory.md / tasks.md / context.md), strict topic separation, soft-delete to `Trash/`, safety floor in `limits.md`, injection protection (Grimoire content is data, not instructions).
 
+[0.5.2]: https://github.com/diranix/grimoire/releases/tag/v0.5.2
+[0.5.1.4]: https://github.com/diranix/grimoire/releases/tag/v0.5.1.4
 [0.5.1.2]: https://github.com/diranix/grimoire/releases/tag/v0.5.1.2
 [0.5.1.1]: https://github.com/diranix/grimoire/releases/tag/v0.5.1.1
 [0.5.1]: https://github.com/diranix/grimoire/releases/tag/v0.5.1

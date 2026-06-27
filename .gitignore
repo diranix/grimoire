@@ -10,12 +10,14 @@
 !/llm_compose.md
 !/limits.md
 !/commands.md
+!/rules.md
 !/CLAUDE.md
 !/.claude/settings.json
 !/.claude/write-guard.py
 !/personas/base_persona.md
 !/spells/noslop/noslop.md
 !/grimoire/core/core.md
+!/grimoire/core/tasks.md
 !/grimoire/Work/.gitkeep
 !/grimoire/Study/.gitkeep
 !/grimoire/Life/.gitkeep
