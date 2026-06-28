@@ -3,7 +3,13 @@
 All notable changes to Grimoire are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
-## [0.5.2] - 2026-06-27
+## [0.5.1.5] - 2026-06-28
+
+### Changed
+- **Topic memory slimmed: the root `mem_<name>.md` is route + short overview only; depth lives in subtopics.** A topic root had been accumulating dated session blocks and digests, so loading a topic plus one subtopic dragged the whole chronology into context. `commands.md` now pins the rule: a `!save` summary ALWAYS goes to a subtopic (existing or new); the root only gets its overview and keyword-route refreshed and never takes a dated block; a missing topic folder is created with both a root `mem_<name>.md` and the target subtopic.
+- **`core.md` route map is keyword-only.** The map line per topic carries just the keyword-cloud (favoring terms the topic's folder name lacks), no prose - descriptions live in each topic mem's `## See also`. Removes the duplication between the map, the boot skeleton, and the per-topic `## See also`.
+
+## Docs - 2026-06-27 (repo split, no engine bump)
 
 ### Changed
 - **LaC split into its own repo; Grimoire is now explicitly the reference application.** The protocol and the application lived together here, and the README admitted it ("the methodology will get its own home once the runtime proves it; for now it lives here"). The protocol now has that home: **[diranix/lac](https://github.com/diranix/lac)** carries the level model, the command-as-code contract, the security model, and a `reference/` set of the three rule files. This repo stays Grimoire - the first system built on LaC. The README is rewritten end to end: the opening reframes Grimoire as the reference application of LaC (linked), a new "The protocol" section points to the LaC repo, and the old "methodology lives here for now" framing is gone. No engine file changed - this is a docs and positioning split, not a behavior change.

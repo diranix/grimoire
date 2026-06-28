@@ -35,7 +35,7 @@ Pausing depends on command type, not phrasing:
 Path (no [path]): top folder by context (Work/Study/Life/Hobbies) / normalize the topic (lowercase, spaces→hyphens, strip special chars) → [Top]/[topic]/.
 
 A topic is a FOLDER holding:
-- mem_<name>.md - the engine's file: routing index + memory about the topic + a link and content keyword-cloud for each of the user's own files. ALWAYS present. Ends with a `## See also`: bidirectional links to adjacent topics, each with a one-line why.
+- mem_<name>.md - the engine's file: routing index + a SHORT topic overview (a few lines, no dated blocks) + a link and content keyword-cloud for each of the user's own files. Depth - session summaries, chronology, digests - lives in subtopic mems, never the root. ALWAYS present. Ends with a `## See also`: bidirectional links to adjacent topics, each with a one-line why.
 - the user's own files - notes named however the user likes. The engine NEVER edits or restructures them. On !save it re-reads them and indexes each into mem (link + keyword-cloud). It reads a user file in full only via !search or on the user's explicit request.
 - subtopic folders - each with its own mem_<sub>_<name>.md plus the user's files and optional dumps.
 - dumps - large read-only source files (PDF, docx, images, raw text) the engine cites but never edits. Their folder is created only when the engine recognizes a dump and proposes it.
@@ -45,13 +45,13 @@ Naming (ALWAYS): root mem_<name>.md (e.g. mem_hashi.md); subtopic mem_<sub>_<nam
 Context dumps (PDF, docx, images, raw text) - read-only source the engine cites but NEVER edits. Each goes in its subtopic folder, referenced by that subtopic's mem with a short description + a keyword-cloud of its CONTENT (terms, numbers, paths inside, not just the filename). Build the cloud from what the engine can read: text natively, images and diagrams via Read, PDF page by page. For a file it cannot read (archive, db, audio/video, unknown binary), build it from the user's description and file metadata.
 
 Write behaviour:
-- Placement: propose root vs a specific subtopic (existing or new), state it plainly, wait for confirm/redirect.
-- Folder missing → create it + mem_<name>.md (add subtopics only if warranted).
+- Placement: a summary ALWAYS goes to a subtopic (existing or new) - propose which, state it plainly, wait for confirm/redirect. The root mem never takes a dated block.
+- Folder missing → create the topic folder + root mem_<name>.md + the target subtopic folder with its mem_<sub>_<name>.md.
 - File exists → read, then append to the end. NEVER overwrite, NEVER touch dumps.
-- Route: summary → mem_<name>.md or the subtopic mem; dump → its subtopic folder.
+- Route: summary → a subtopic mem (existing or new); the root mem_<name>.md only gets its overview and keyword-route refreshed, never a dated block. Dump → its subtopic folder.
 - The engine never writes the user's notes or tasks.md. On !save it indexes the user's files into mem (link + keyword-cloud); the page stays the user's.
 - Multiple topics → STRICT separation: one self-contained summary per topic in its own folder; report what went where; ask only when the topic→folder mapping is unclear.
-- After the save, update core.md with anything that belongs in the user's standing context.
+- After the save, update core.md. The topic route map is keyword-only: one line per topic, just the keyword-cloud (favor terms the topic's FOLDER name lacks). No prose - descriptions live in the topic mem's `## See also`.
 
 Block format (memory files):
   ## YYYY-MM-DD
