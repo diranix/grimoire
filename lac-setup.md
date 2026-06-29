@@ -1,6 +1,6 @@
 # LaC Setup
 > LLM as Code - installer for Claude Code (terminal or desktop app)
-> Version: 0.5.1.9
+> Version: 0.5.2
 
 ---
 
@@ -125,8 +125,9 @@ Structure:
 │   ├── core/tasks.md     ← global task register (loaded every session; you write it)
 │   └── Work/ Study/ Life/ Hobbies/   (each with a .gitkeep until first !save)
 │       └── [topic]/                  ← created on first !save
-│           ├── mem_<topic>.md         ← engine's routing index + memory (indexes your notes)
+│           ├── mem_<topic>.md         ← engine's routing index + ## Overview (indexes your notes)
+│           ├── history_<topic>.md     ← grep-only dated decision archive (never loaded, !search only)
 │           ├── [your notes]           ← your own files, any name (engine never edits them)
-│           └── [subtopic]/            ← optional, with its own mem + dumps
+│           └── [subtopic]/            ← optional: short decision digest + your files + dumps
 └── trash/                ← soft-delete grave (keep private)
 ```

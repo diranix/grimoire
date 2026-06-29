@@ -3,6 +3,15 @@
 All notable changes to Grimoire are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
+## [0.5.2] - 2026-06-29
+
+### Added
+- **`history_<name>.md` - a grep-only decision archive, one per topic.** The dated record - every decision and session summary - now lives in a single history file at the topic root, each block tagged with the subtopic it belongs to (`subtopic: <sub>`). It is NEVER loaded: not by `!load topic`, not by `load topic/sub`, not even by `load topic/all`. It is reached only through `!search`, which now greps it alongside the subtopic mems, the user's notes, and the dumps. The chronology costs no context until a query needs it, and a question that turns on a past decision is answered from here rather than by dragging the whole record into head. `!save` creates it with the topic folder; `!compress` never shrinks it (grep-only, it costs nothing, so it stays the full canonical record, like a dump); `!cleanup` re-tags a block's `subtopic:` line rather than moving the one-per-topic file.
+
+### Changed
+- **The subtopic mem is now a short decision digest, not a session wall.** `mem_<sub>_<name>.md` loads on `load topic/sub`, so every line it carried cost context - and it had grown into dated session transcripts. It now holds only a `## Decisions` list of one-line verdicts (`- decided X, because Y [[history_<name>]]`), newest last; the full dated body for each verdict moved to the topic's `history_<name>.md`. The save block format moved with it: the dated `## YYYY-MM-DD` / `### [subtitle]` block (now carrying a `subtopic:` line) is written to the history file, while the subtopic mem takes only the squeezed verdict.
+- **The root `mem_<name>.md` overview is now a REQUIRED `## Overview` section.** The rule that the root carries "a SHORT topic overview (a few lines)" had decayed in practice into a bare keyword-cloud. The overview is now a named, required section - a few plain sentences retelling what the topic is and where it stands - so the short retelling cannot quietly vanish into the tag cloud beside it. Mirrored across `commands.md` (`!load`, `!search`, the topic-folder shape, Naming, Write behaviour, the block format, `!cleanup`, `!compress`), `lac-setup.md` (structure diagram), and the README memory model. `llm_compose.md` version bump.
+
 ## [0.5.1.9] - 2026-06-28
 
 ### Fixed

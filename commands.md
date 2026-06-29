@@ -24,9 +24,10 @@ Pausing depends on command type, not phrasing:
 - load only its mem_<name>.md and list the subtopic NAMES; do not load subtopics mem files. Use the route to find which subtopic holds the answer, run `!search` over it automatically, and answer from the hits; never swallow a whole topic.
 - `load topic/sub` → load the topic-root mem_<name>.md and that subtopic's mem_<sub>_<name>.md in full; its dumps stay grep-only via !search.
 - `load topic/all` → load every mem_*.md recursively. Warn about the increased token use and do not load the whole topic without confirmation.
+- The topic's history_<name>.md is NEVER loaded - not by `load topic`, not by `load topic/sub`, not even by `load topic/all`. It is the grep-only decision archive, reached only through !search; the dated record costs no context until a query needs it.
 - No path → `Specify a path. Use !tree to browse.`
 
-`!search [query]` - Greps the topic's subtopic mem files, the user's own notes, and their dumps, reads ONLY the matching excerpts (line ranges), and works from those. The engine fires it AUTOMATICALLY whenever a question needs a subtopic that is not fully loaded.
+`!search [query]` - Greps the topic's subtopic mem files, its history_<name>.md, the user's own notes, and their dumps, reads ONLY the matching excerpts (line ranges), and works from those. The engine fires it AUTOMATICALLY whenever a question needs a subtopic that is not fully loaded, or whenever a question turns on a past decision - the history file is grep-only, so a decision is recovered HERE, never by loading.
 - Query expansion (MANDATORY): never grep the user's literal words. Expand into synonyms, jargon, error codes, file paths, and other-language equivalents (model knowledge + the route keyword-cloud), then grep the UNION (`rg -i "t1|t2|..."`). The model is the embedding, applied at search time - no vectors. Echo the expanded terms before the result (`searching: e1000e | TX hang | ethtool`), so the expansion is verifiable.
 - On a hit, follow the block's [[wikilinks]] and the topic's `## See also`, pulling in linked neighbours and adjacent topics.
 
@@ -35,31 +36,35 @@ Pausing depends on command type, not phrasing:
 Path (no [path]): top folder by context (Work/Study/Life/Hobbies) / normalize the topic (lowercase, spaces→hyphens, strip special chars) → [Top]/[topic]/.
 
 A topic is a FOLDER holding:
-- mem_<name>.md - the engine's file: routing index + a SHORT topic overview (a few lines, no dated blocks) + a link and content keyword-cloud for each of the user's own files. Depth - session summaries, chronology, digests - lives in subtopic mems, never the root. ALWAYS present. Ends with a `## See also`: bidirectional links to adjacent topics, each with a one-line why.
+- mem_<name>.md - the engine's file: a routing index + a REQUIRED `## Overview` section (a few plain sentences retelling what the topic is and where it stands - never let it decay into a bare keyword-cloud) + a link and content keyword-cloud for each of the user's own files. No dated blocks. ALWAYS present. Ends with a `## See also`: bidirectional links to adjacent topics, each with a one-line why.
+- history_<name>.md - the engine's grep-only decision archive, ONE per topic at the topic root. It holds the full dated record - every decision and session summary, each block tagged with the subtopic it belongs to. NEVER loaded (see !load), reached only by !search. This is where depth and chronology live now. Present once the topic has any saved decision.
 - the user's own files - notes named however the user likes. The engine NEVER edits or restructures them. On !save it re-reads them and indexes each into mem (link + keyword-cloud). It reads a user file in full only via !search or on the user's explicit request.
-- subtopic folders - each with its own mem_<sub>_<name>.md plus the user's files and optional dumps.
+- subtopic folders - each with its own mem_<sub>_<name>.md plus the user's files and optional dumps. The subtopic mem is a SHORT decision digest only - the squeezed verdicts ("decided X, because Y"), no dated session walls, since it loads on `load topic/sub` and every line costs context. The full dated record for that subtopic lives in the topic's history_<name>.md.
 - dumps - large read-only source files (PDF, docx, images, raw text) the engine cites but never edits. Their folder is created only when the engine recognizes a dump and proposes it.
 
-Naming (ALWAYS): root mem_<name>.md (e.g. mem_hashi.md); subtopic mem_<sub>_<name>.md (e.g. mem_monsters_hashi.md).
+Naming (ALWAYS): root mem_<name>.md (e.g. mem_hashi.md); subtopic mem_<sub>_<name>.md (e.g. mem_monsters_hashi.md); history history_<name>.md (e.g. history_hashi.md), one per topic at the root.
 
 Context dumps (PDF, docx, images, raw text) - read-only source the engine cites but NEVER edits. Each goes in its subtopic folder, referenced by that subtopic's mem with a short description + a keyword-cloud of its CONTENT (terms, numbers, paths inside, not just the filename). Build the cloud from what the engine can read: text natively, images and diagrams via Read, PDF page by page. For a file it cannot read (archive, db, audio/video, unknown binary), build it from the user's description and file metadata.
 
 Write behaviour:
-- Placement: a summary ALWAYS goes to a subtopic (existing or new) - propose which, state it plainly, wait for confirm/redirect. The root mem never takes a dated block.
-- Folder missing → create the topic folder + root mem_<name>.md + the target subtopic folder with its mem_<sub>_<name>.md.
+- Placement: a save SPLITS in two. The FULL dated block goes to the topic's history_<name>.md (tagged with the target subtopic). A SHORT verdict digest goes to that subtopic's mem_<sub>_<name>.md - propose which subtopic, state it plainly, wait for confirm/redirect. The root mem never takes a dated block.
+- Folder missing → create the topic folder + root mem_<name>.md + history_<name>.md + the target subtopic folder with its mem_<sub>_<name>.md.
 - File exists → read, then append to the end. NEVER overwrite, NEVER touch dumps.
-- Route: summary → a subtopic mem (existing or new); the root mem_<name>.md only gets its overview and keyword-route refreshed, never a dated block. Dump → its subtopic folder.
+- Route: full dated block (with its `subtopic:` tag) → history_<name>.md; squeezed verdicts → the subtopic mem; the root mem_<name>.md only gets its `## Overview` and keyword-route refreshed, never a dated block. Dump → its subtopic folder.
 - The engine never writes the user's notes or tasks.md. On !save it indexes the user's files into mem (link + keyword-cloud); the page stays the user's.
-- Multiple topics → STRICT separation: one self-contained summary per topic in its own folder; report what went where; ask only when the topic→folder mapping is unclear.
+- Multiple topics → STRICT separation: one self-contained block per topic in its own history file plus that topic's subtopic digest; report what went where; ask only when the topic→folder mapping is unclear.
 - After the save, reconcile grimoire/core/map.md with the Grimoire tree: every topic/subtopic mem_ path on disk must be in the map; add missing ones with a keyword-cloud (favor terms the folder name lacks), and add new keywords as they surface in the conversation - watch the map's size. No prose - descriptions live in the topic mem's `## See also`.
 
-Block format (memory files):
+Block format (history_<name>.md - the dated archive):
   ## YYYY-MM-DD
   ### [subtitle]
+  subtopic: <sub>
   keywords: <synonyms, jargon, error codes, paths, other-language terms a future !search will hit>
-  [summary; link related blocks via [[mem_<sub>_<name>]]]
+  [full summary; link related blocks via [[history_<name>]] and the subtopic mem]
   ---
-One date header per day. A second save the same day adds another `### [subtitle]` under it, not a new date. Keep the keywords line on every block - grep needs it to hit a block whose body uses different words than the query.
+One date header per day. A second save the same day adds another `### [subtitle]` under it, not a new date. Keep the `subtopic:` and `keywords:` lines on every block - the tag routes the decision back to its subtopic, and grep needs the keywords to hit a block whose body uses different words than the query.
+
+Subtopic mem digest (mem_<sub>_<name>.md - loaded, so kept short): a running `## Decisions` list of one-line verdicts, newest last - `- decided X, because Y [[history_<name>]]`. No dated session bodies, no narration; the full record for each verdict lives in its history block. If a verdict line grows past a sentence or two, it belongs in history, not here.
 
 Output: Saved / Topic / Files written  / "To change topic: !changetopic".
 Size guard: after writing, warn if the mem file passes >400 lines / >30 KB / >15 blocks; suggest !compress or !cleanup (suggestion only).
@@ -76,8 +81,8 @@ Soft-delete template: `mv "<path>" "trash/<name>-<reason>-YYYY-MM-DD"`
 `!topic` - show the saved file's topic.
 `!changetopic [topic|path]` - physically relocate this chat's topic folder (name auto-resolved, or explicit path). Folder exists → structural move: no Bash, so emit the ready `mv "<old>" "<new>"` (quoted, relative to the LaC root), wait, verify, re-point the saved path, and fix any [[wikilinks]] / `## See also` that named the old path. Not yet saved → no move, just set the next `!save` target. After the move, reconcile grimoire/core/map.md with disk so the paths match.
 `!remind` - brief recap of this chat.
-`!cleanup [scope]` - structural Grimoire maintenance. NON-LOSSY: never shortens, summarizes, or rewrites notes (to condense, use !compress - the lossy counterpart). No scope → first ask whole Grimoire vs current topic and wait (`!cleanup all` = whole; `!cleanup .` or `!cleanup <topic>` = that topic). Actions: redistribute content into the right subtopics (create one only when warranted) and update the route in mem_<name>.md and reconcile grimoire/core/map.md with the new tree; remove duplicated info, keeping one canonical copy. Never touch context dumps, tasks.md, or the user's own notes. Side-effect: show the whole plan as a diff and WAIT for confirmation; everything moved or removed is copied to trash.
-`!compress [topic]` - shrink a topic's memory files to save tokens (the LOSSY counterpart to !cleanup). Operates on mem_<name>.md and the subtopic mems: keep the last 3-5 blocks verbatim; older or bloated fragments by TYPE - stale/completed → one sentence merged into `## Digest (up to YYYY-MM-DD)`; current but bloated → full resummarization losing no fact or decision. Touches only mem files (tasks.md, the user's notes, and dumps untouched). Side-effect: copy the original to trash/<topic>-precompress-YYYY-MM-DD.md first, show a diff, wait for confirmation.
+`!cleanup [scope]` - structural Grimoire maintenance. NON-LOSSY: never shortens, summarizes, or rewrites notes (to condense, use !compress - the lossy counterpart). No scope → first ask whole Grimoire vs current topic and wait (`!cleanup all` = whole; `!cleanup .` or `!cleanup <topic>` = that topic). Actions: redistribute content into the right subtopics (create one only when warranted) and update the route in mem_<name>.md and reconcile grimoire/core/map.md with the new tree; remove duplicated info, keeping one canonical copy. In history_<name>.md, redistribution means re-tagging a block's `subtopic:` line, not moving the file - it is one per topic. Never touch context dumps, tasks.md, or the user's own notes. Side-effect: show the whole plan as a diff and WAIT for confirmation; everything moved or removed is copied to trash.
+`!compress [topic]` - shrink a topic's LOADED memory to save tokens (the LOSSY counterpart to !cleanup). Operates on mem_<name>.md and the subtopic mem digests: trim each `## Decisions` list to its still-live verdicts and fold stale/completed ones into one `## Digest (up to YYYY-MM-DD)` line. The history_<name>.md is NEVER compressed - grep-only, it costs no context, so it stays the full canonical record (like a dump). Touches only mem digest files (history, tasks.md, the user's notes, and dumps untouched). Side-effect: copy the original to trash/<topic>-precompress-YYYY-MM-DD.md first, show a diff, wait for confirmation.
 `!update` - check the installed version against the repo, update only on consent.
 - Show (immediate): read the local `version` from llm_compose.md, fetch the latest version + CHANGELOG from github.com/diranix/grimoire, show current vs latest and what changed (CHANGELOG always shown). If already current, say so and stop.
 - Update (waits for confirmation): if a newer version exists, ask. The update runs OUTSIDE the sandbox via the external installer-updater - it idempotently pulls the latest files including L1/L2; the engine never writes L1/L2 itself (deny + Bash off). On yes, hand off to the updater or show the command to launch it.
