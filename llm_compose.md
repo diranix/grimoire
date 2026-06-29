@@ -1,7 +1,7 @@
 # LLM Compose
 
 ```yaml
-version: "0.5.1.5"
+version: "0.5.1.9"
 
 users:
   admin: YOUR_NAME
@@ -21,7 +21,4 @@ context:
 paths:
   grimoire: grimoire/
   trash: trash/
-
-engine:
-  activity: normal   # active | normal | passive
 ```

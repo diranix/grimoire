@@ -5,83 +5,100 @@
 
 *Created by [Ivan Baibakov (diranix)](https://github.com/diranix)*
 
-> **Grimoire is the application based on [LaC (LLM as Code)](https://github.com/diranix/lac).** LaC is a protocol for governing a language model with files instead of trust: a constitution the model loads every session, a tiered file hierarchy where the rules outrank the model, and a command set that writes state back to disk. You don't make the model smarter - you keep it in bounds and give it the right tools. The protocol lives in its own repo, [diranix/lac](https://github.com/diranix/lac); this repo is Grimoire, the first system built on it - a file-based knowledge store that proves the protocol in use.
+___
 
-Grimoire is a file-based knowledge system. Your rules, commands, context, and memory live on disk, not in a chat history that vanishes. The LLM loads itself from those files, runs commands, and writes state back. You keep one source of truth, version it like code, and edit it in any tool.
+## What it is and why
 
-> **Status: alpha.** Built for **Claude Code** (terminal CLI or desktop app). Claude Code reads and writes files natively and is scoped to the folder you open, so no Docker, no MCP server, and no memory hook are required. The engine loads automatically every session via `CLAUDE.md`.
+**Grimoire is the first application built on the LaC protocol.** Grimoire began as a memory upgrade for Claude Code between sessions and grew into something more. It is now a notebook that a human and an LLM keep together: you set the direction and write your own notes, and Grimoire reads, indexes, and voices them. Everything lives in plain markdown files on disk, so you can edit them in any editor, not only through the LLM. A chat session is a draft; `!save` writes the session's memory to disk, and once you close the chat you continue the next one from the same place.
 
-> ⚠️ Not accepting contributions at this time.
+**The next step is building a runtime** that turns the LLM's prose prohibitions into code and allows the use of any LLM, including local ones.
+
+What Grimoire gives you:
+
+ - optimization of memory and token use
+ - improvement of LLM's work through persistent context
+ - openness and control over the program
+ - privacy - all files are stored locally on your machine
+
+ 
+**Status: alpha.** For now it is a rule set that works only with Claude Code. All actions run natively, no extra applications needed. Grimoire launches in a dedicated folder of its own and does not affect your other projects.
+
+⚠️ Not accepting contributions at this time.
+
+___
+
+## Link to LaC
+
+When Grimoire was still my personal file system, I realized that an LLM does not always recognize and correctly carry out my prose requests. So I understood I needed a set of commands with a clear description of behavior for the LLM - one that recognizes the intent, translates it, and runs it as deterministic commands, asking the user first. After that I noticed my conversation with the LLM had turned into a set of commands and looked more like code than an ordinary conversation. That is how the idea of LaC - LLM as a Code - was born, which has now grown into a separate protocol.
+
+The goal of LaC is to reduce LLM drift and make a user's commands almost always lead to the same result. In effect it is an attempt to turn prose into deterministic commands through sets of files of commands, permissions, and prohibitions.
+
+As the basis for the LaC protocol I took IaC and Docker, because those are what I know best. The main file in LaC is llm_compose.md. It holds links to all the other files and assembles the system - the first step in the protocol, exactly where docker-compose sits in Docker. Next come the files of the highest level - the LLM limits, which carry the rules of restriction and security. Then the second-level files - the set of commands and rules that make the protocol a separate program. And last, the third level - the program's content.
+
+Splitting into levels gives protection and a clear hierarchy of rights. Second-level rules override third-level rules but do not affect first-level rules. First-level rules dictate the behavior of levels 2 and 3, while level 3 carries no rules at all and cannot affect the other two. Users are split across the levels as well, holding edit rights to those levels. The administrator edits level 1 files and everything below - he configures the security and limits of the program built on LaC. The developer edits level 2 files and below - he is responsible for creating commands and the rules for running them, and shapes the logic and mechanics of the LLM's work, turning it into a standalone program. And the user, together with the LLM itself, fills level 3 with content. They cannot create new commands or change the security limits. Level 3 files are data, not instructions or commands to the engine: the engine quotes the text inside them, it does not execute it.
+
+For now the level hierarchy is backed by the Claude Code runtime, and the files are locked from LLM editing through .claude/settings.json. Here it is worth drawing a line. The edit locks are already real enforcement: deny rules physically keep the LLM from rewriting levels 1 and 2. But the behavioral rules still rest more on a system of requests that the LLM chooses to heed. During the migration to its own runtime, it is this second part that will move to tool-level restrictions on the LLM, which will force it to follow the rules. Also, the current version of Grimoire is assembled from the CLAUDE.md file and is more of a layer on top of Claude Code; this too will be fixed in the future.
+
+___
 
 ## How it works
 
-Four layers plus a persistent file store (the Grimoire):
+On the first message in a new chat in Claude Code, opened in the Grimoire folder, the json files fire - they restrict the LLM's tools and handle security. Then the LLM reads CLAUDE.md, which holds only the command to read llm_compose and get the load order. After that the first-level files load, which guard the engine with limits and keep potentially harmful commands from L3 from firing if the engine reads them first. Then come the L2 files with the program's commands and rules. And last come the level-3 data. That is the basic LaC startup for now.
 
-- `llm_compose.md` (L1) - entry point. Defines levels, context, and paths. Immutable, alongside `limits.md`. Loaded automatically every session via `CLAUDE.md`.
-- `limits.md` (L1) - immutable rules. The safety and integrity floor.
-- `commands.md` (L2) - the command set: `!reboot`, `!save`, `!load`, `!search`, `!cast`, `!tree`, `!cleanup`, `!compress`, and more.
-- `rules.md` (L2) - behavior tuning: the `engine.activity` dial (`active` / `normal` / `passive`), the context-budget discipline, the user-files rule, the no-Bash filesystem handoff, and the output-style guard. Separate from `commands.md` so behavior is tuned without touching the command mechanics.
-- `personas/` (L3) - the engine's personalities, one file per persona (`<name>_persona.md`). The active one is whichever `llm_compose.md` points to - swap by repointing. The bundled default ships plain and neutral on purpose, a blank slate you replace with a character of your own. Since the active persona loads every session, it is also where you record *your own* in-world identity for roleplay (how you're addressed, backstory, relationships) - the engine then knows it from the first message, no `!load` needed.
-- `spells/` (L3) - the official add-on layer. A spell is behavior, not data: its main file defines *how* the engine acts, not what it knows. `!cast <name>` loads a spell (its main file plus any references) into the session and applies it until you start a fresh one; `!spells` lists what you have. This is how you extend or specialize the engine without touching the core files - write a spell, share it, or install one from someone else. `limits.md` (L1) still outranks any spell: it cannot lift a file lock or the safety floor. One ships bundled: **`noslop`** (`!cast noslop`), a deslop pass that strips machine-generated tells out of prose before you ship a deliverable.
-- `grimoire/` - persistent memory, organized into topic folders. A topic may nest subtopic folders (each with its own memory file plus any context dumps), so you can load or search one facet of a topic without pulling the rest.
+It is important to separate Grimoire as a program from the LaC protocol. Grimoire has files modified for its own needs. For example, all level-2 commands are built for working with text, and the rules - for better work with notes overall. Grimoire's startup is changed too: among the level-3 data the engine loads a ready topic map (core/map.md) at startup, which it then uses to navigate the whole grimoire. It does not rebuild the map every time - it keeps it in core/map.md and reconciles it with the tree on every `!save`.
 
-On boot the engine also scans `grimoire/` and loads its folder tree (directory names only). Knowing the existing topics up front lets the LLM route a conversation into an already-existing folder on `!save` instead of spawning near-duplicate topics.
+Memory is arranged like this: in the home directory "grimoire" there is, by default, a service directory core and four categories - Work, Study, Life, Hobbies. The topics themselves are directories inside the categories. core holds files with the user's basic information, the topic map, and tasks. The user writes the tasks themselves, and the engine only reads them.
 
-A chat session is a draft; `!save` is what makes memory canonical. Close the chat - lose nothing that was saved.
+Each topic is a separate directory. In it the engine writes its single own file, "mem_<name>.md": a route to where everything lives, plus an index of the notes - a link and a tag cloud for each. The rest of the directory belongs to the user: notes under any names, which the engine reads, quotes, and indexes, but never edits. Large topics split into subtopics, each with its own mem_. Dumps - PDF, docx, images - are read-only sources: the engine quotes them, does not change them.
 
-Each topic is a folder. The engine writes one file per topic: the routing file `mem_<name>.md` - a map of where things live plus a light, always-loaded summary that also indexes your own notes (a link and a content keyword-cloud per file). Everything else in the folder is yours: notes under any name you like, which the engine reads, cites, and indexes but never edits or restructures. The Grimoire is a notebook with an embedded model - the human leads, and the engine voices the notes rather than writing them for you. Actionable tasks live in one global, always-loaded register, `grimoire/core/tasks.md` - you write it yourself; the engine only reads it. Big topics split into **subtopics**: nested folders that each hold their own `mem_<sub>_<name>.md` plus your notes and any context dumps (PDF/docx/images/text) that belong to them. There is no root-level `context/` - every dump lives inside its subtopic and is read-only. `!load topic` pulls just the routing file and lists subtopic names, then answers by **searching** the relevant subtopics on demand (`!search`) instead of loading everything; `!load topic/sub` loads one subtopic fully for hands-on work; `!load topic/all` pulls everything. That way a large topic never floods the context window. The window only grows - once something is read in, the session cannot evict it - so the engine runs a hard budget: it reads dumps only on request (warning first when a file is large), never re-reads a file already in head except on request, and when many topics pile up or a single topic grows heavy it stops and suggests `!save` plus a fresh session (or `!cleanup` to split the topic), since the only real reset is a new session. Search doesn't match your literal words: the engine expands a query into synonyms, jargon, error strings, and other-language terms first - acting as the embedding at query time, so recall stays semantic with no vectors and no server - and echoes the expanded terms so you can see what it looked for. Each saved block carries a `keywords:` line and each route a keyword cloud, the file-side half of that recall. Each topic also ends its routing file with a `## See also` section - two-way links to neighbouring topics - so a hit in one topic pulls in adjacent ones, a knowledge graph expressed in folder names and links rather than a separate graph store.
+Working with memory happens through commands: `!save` writes a summary of the chat into a topic, `!load` brings up a topic, `!search` searches within it, `!cleanup` and `!compress` tidy up, `!delete` hides things in trash, `!cast` turns on a spell. Spells are add-on skills for Grimoire - one (`noslop`) ships bundled, the rest come from third-party developers. Loading is on demand - `!load` pulls only the index, while note bodies are pulled in through `!search` when needed, so a large topic stays light on context. `!search` itself does not look for literal words: the engine expands the query into synonyms, jargon, error codes, and other-language equivalents and greps the union, that is, it becomes the "embedding" at search time. The engine cannot move files - on `!delete` or a move it dictates a ready `mv` command to the terminal, and the user runs it.
 
-As you talk, the engine keeps a **live checkpoint buffer** - a running draft summary held in the session context (never on disk). Decisions are captured the moment they land, so `!save` writes from a buffer that's already complete instead of recapping the whole chat from memory. Since the buffer lives only in context, the engine periodically nudges you to `!save` once decisions pile up - but it never writes without an explicit command.
-
-To keep memory tidy and token usage in check, two separate commands maintain the Grimoire. `!cleanup` is **structural and non-lossy**: it sorts content into the right subtopics and removes duplicates - so reorganizing never costs you a note - and never touches your `tasks.md` or your own notes. `!compress` is the **lossy** counterpart: it shrinks a topic's memory file, keeping recent session blocks verbatim while digesting older or bloated ones. A passive size guard watches each topic's memory file on `!load` and `!save` and suggests these once it grows past a threshold. Nothing is ever moved, compressed, or deleted without an explicit command, and everything removed is copied to `trash/`.
-
-Locked files - `llm_compose.md` and `limits.md` (L1, immutable), `commands.md` and `rules.md` (L2, admin-only), and `CLAUDE.md` (the boot ritual) - are enforced at the tool level via `.claude/settings.json` deny rules, so the engine cannot overwrite its own governance or rewrite its own constitution - even if asked. The lock holds because `settings.json` also **denies Bash**: a deny on `Edit`/`Write` is only a wall while the engine has no general code-execution primitive to walk around it. With Bash gone, the engine runs its commands on native tools (Grep, Glob, Read, Write, Edit) and hands file moves and deletes to your terminal - so `!delete` proposes a ready `mv` command rather than running it. The deny list also covers its own enforcers (`settings.json`, `settings.local.json`, the guard script) and `CLAUDE.md` itself, and a `SessionStart` hook forces the boot ritual every session so entering LaC mode does not depend on the model's goodwill.
-
-Know the limit of this lock. The deny rules and the hooks are Claude Code mechanisms, not OS-level enforcement. If Claude Code changes how it matches deny rules, or adds a new write primitive (some future `MultiEdit` or equivalent), that primitive does not fall under the existing matchers on its own - the lock silently stops covering it, and no static test flags the gap. The boot ritual answers this with a lock canary: on every session start the engine attempts a write the `.claude/**` deny must refuse - and if that write ever goes through, it refuses to enter LaC mode rather than trust a lock that has quietly stopped holding. Treat the deny layer as a strong default, not a guarantee.
-
-This is a deny list by necessity, and a deny list always lags the tool set. You cannot build a pure allow-list in Claude Code: precedence is `deny > ask > allow`, and there is no default mode that refuses everything unlisted, so `deny: ["*"]` leaves no exceptions - it strikes the allowed tools too, because deny always overrides allow. The consequence is that any tool absent when you write the rules is uncovered. The sharpest case is MCP: connect any server with a write or exec tool - named `mcp__server__tool`, a shape the per-file locks never match - and it walks straight past them. That is why this build denies `mcp__*` wholesale, blocking the whole MCP class present and future instead of chasing individual servers. Anchor the path matchers too: a bare filename matches that name at any depth, while a `//` prefix is read as an absolute filesystem path that can match nothing - use the project-root single-`/` form (`Edit(/llm_compose.md)`) and verify on your own version, since deny matching has drifted across releases (an earlier symlink CVE sidestepped path denies entirely). And none of this survives `--dangerously-skip-permissions`. That flag turns off the entire permission layer - deny rules, file locks, the Bash ban, all of it - so every wall described above is gone the moment you launch with it. Sources even disagree on whether deny holds in that mode at all, and with nine published permission-bypass CVEs there is no version to trust. The rule is simple: never start the LaC project in bypass mode. In bypass every protection here falls away - use it entirely at your own risk. For a lock the engine cannot lift even in principle, set the OS immutable flag on the L1/L2 files (`chflags uchg` on macOS, `chattr +i` on Linux), removed by hand for a deliberate edit.
+___
 
 ## Requirements
 
-- **Claude Code** (terminal CLI or the desktop app - both work)
-- **Opus 4.8 recommended.** LaC asks the model to hold a strict protocol on every turn - the boot ritual, command parsing, grounding tags, the locks. Opus 4.8 holds it best; weaker or older models follow it less reliably and the engine drifts. A recommendation, not a hard requirement.
-- A dedicated folder for LaC, opened as your Claude Code project (that folder is the LaC root)
+- **Claude Code** (terminal CLI or the desktop app - both should work, but the terminal version hasn't been tested yet)
+- LaC asks the model to hold a strict protocol on every turn - the boot ritual, command parsing, the locks. **Stronger models hold it better**; weaker or older models follow it less reliably and the engine drifts.
+- **A dedicated folder** for LaC, opened as your Claude Code project (that folder is the LaC root)
+- **python3** powers the warn-only write guard - a style-tell check plus a secret scan. It is required only for that guard: without python3 the guard is off and everything else works.
 
-That's it. No Docker, no MCP filesystem server, no client memory hook. `python3` is optional - it powers the warn-only write guard (style tells plus a secret scan); if it is absent, the guard simply does nothing and everything else works.
+___
 
 ## Install
 
-Open an empty folder as a Claude Code project (terminal: `cd` in and run `claude`, or the desktop app with the folder open). Paste this link into the chat and say **install**:
+Create and open a folder as a Claude Code project. Paste this link into the chat and say **install**:
 
 ```
 https://raw.githubusercontent.com/diranix/grimoire/main/lac-setup.md
 ```
 
-Claude Code reads `lac-setup.md` and runs it. It asks once for your ward name, then fetches every technical file from the repo by its raw URL and writes it locally - the four governance files, the `.claude/` lock and hooks, a neutral base persona, the bundled `noslop` spell, and an empty `grimoire/`. The installer carries no file bodies of its own: it lists what to fetch and where it goes, so the repo copies are the single source of truth and what you install matches the repo with nothing to drift. The fetch reads from GitHub; nothing of yours leaves your machine.
+Claude Code reads `lac-setup.md` and runs it. It asks once for your admin name, then fetches every technical file from the repo by its raw URL and writes it locally - the four governance files, the `.claude/` lock and hooks, a neutral base persona, the bundled `noslop` spell, and a `grimoire/` holding its `core/` files and empty category folders.
 
-The installer is idempotent. Run it again on a folder that already has LaC and it refreshes the engine files while leaving your data alone - it never overwrites `grimoire/`, `core.md`, your ward name, or your active persona.
+The installer is idempotent. Run it again on a folder that already has LaC and it refreshes the engine files while leaving your data alone - it never overwrites `grimoire/`, `core.md`, your admin name, or your active persona.
 
-After install, start a fresh session in the same folder and it enters LaC mode on its own. The boot lives in `CLAUDE.md` and a `SessionStart` hook, both of which run only inside a Claude Code project session for this folder. A generic Cowork or assistant chat that has not opened the folder stays an ordinary assistant - no boot line, no persona, no commands. Run `!reboot` to reload after you edit a LaC file outside the session.
+After install, start a fresh session in the same folder and it enters LaC mode on its own. The boot lives in `CLAUDE.md` and a `SessionStart` hook, both of which run only inside a Claude Code project session for this folder. A generic Cowork or assistant chat that has not opened the folder stays an ordinary assistant - no boot line, no persona, no commands. Grimoire works only with Claude Code.
+
+___
 
 ## Updating
 
-Run `!update` in a LaC session. It reads your local version, fetches the latest version and CHANGELOG from the repo, and shows what changed - all read-only, nothing written. If you are already current, it says so and stops.
+Run `!update` in a LaC session. It reads your local version, fetches the latest version and CHANGELOG, and shows what changed - read-only, nothing written. If you are already current, it says so and stops.
 
-If a newer version exists and you confirm, the engine hands you one terminal command. It cannot apply the update itself: `.claude/settings.json` denies Bash and locks the L1/L2 files, so the engine has no way to rewrite its own governance - the same wall that stops a misbehaving agent stops the updater. The command fetches `lac-update.sh` from the repo and runs it in your shell, outside that wall, where it can refresh the locked files.
+If a newer version exists and you confirm, the engine hands you one terminal command - it cannot update itself, because .claude/settings.json denies Bash and locks the L1/L2 files. The same wall that stops a rogue agent stops the engine from rewriting its own governance. The command fetches lac-update.sh and runs it in your shell, outside that wall.
 
-`lac-update.sh` is careful by design. It refreshes only LaC's own engine files (`limits.md`, `commands.md`, `rules.md`, `CLAUDE.md`, `.claude/settings.json`, `.claude/write-guard.py`, and the bundled `spells/noslop/noslop.md`) and bumps the version line in `llm_compose.md`, keeping your ward name and persona pointer. It never touches `grimoire/`, never overwrites a persona (it only restores `base_persona.md` when that file is missing), and leaves your own spells alone - only the bundled `noslop` spell is refreshed, because LaC maintains it. So your notes, your active persona, and your own spells survive. It copies every replaced file to `trash/` first, so even an edited `noslop` is recoverable there. When it finishes, run `!reboot`.
+lac-update.sh refreshes only LaC's own engine files - limits.md, commands.md, rules.md, CLAUDE.md, .claude/settings.json, .claude/write-guard.py, and the bundled noslop spell (LaC maintains it) - and refreshes llm_compose.md while re-injecting your admin name and persona pointer, so structural changes land without losing your two choices. It leaves your data alone: it never overwrites anything under grimoire/, your active persona, or your own spells, and only restores core/map.md or base_persona.md when one is missing. Every replaced file is copied to trash/ first. When it finishes, run `!reboot`.
 
 ### Keep your Grimoire private
 
-Your `grimoire/` folder holds personal context - name, location, server IPs, plans - and `trash/` (at the project root) holds the soft-deleted copies of that same data. The public repo ships only LaC's own files (the installer, the engine files, the updater), never your notes, so installing from the link publishes nothing of yours. The risk is on you only if you put your own Grimoire under Git: keep that repository **private**, or add `grimoire/` and `trash/` (and any persona file with personal details) to `.gitignore` before the first push. The installer does not do this for you.
+Your notes live on your machine and never leave it. Installing LaC publishes nothing of yours - the public repo carries only LaC's own files (installer, engine, updater), never your data.
 
-## The protocol
+The installer never sets up Git. So the only way your data could go public is if you decide to put your install folder under Git yourself. If you do, grimoire/ and trash/ hold everything personal - names, locations, server IPs, plans - so either keep that repository private, or add grimoire/, trash/, and any persona file with personal details to .gitignore before your first push.
 
-Grimoire is one application built on LaC. The protocol itself - the level model, the command-as-code contract, the security model, and the reference rule files - lives in its own repo: **[diranix/lac](https://github.com/diranix/lac)**. Read it there if you want to govern a model your own way rather than use Grimoire as shipped.
+___
 
 ## Author
 
-LaC (LLM as Code) was created and is maintained by **Ivan Baibakov** (**diranix**) - its inventor and lead developer. Grimoire is the first application built on top of it.
+LaC (LLM as Code) and Grimoire were created and are maintained by **Ivan Baibakov** (**diranix**).
 
 ## License
 

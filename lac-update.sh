@@ -86,16 +86,32 @@ if [ ! -e "$PROJECT_DIR/$BP" ] && [ -f "$TMP/repo/$BP" ]; then
   echo "restored (was missing): $BP"
 fi
 
-# llm_compose.md is never overwritten wholesale - it carries your ward name and
-# persona pointer. Only the version line is bumped in place. A structural change
-# (new keys, renamed levels) is rare and goes through the installer path instead.
+# map.md is the route map - user data, never overwritten. But it is a file LaC
+# introduced, so restore an empty template only when missing (an install from
+# before the map existed), giving boot a map to load until the next !save
+# reconciles it. An existing map is left untouched.
+MAP="grimoire/core/map.md"
+if [ ! -e "$PROJECT_DIR/$MAP" ] && [ -f "$TMP/repo/$MAP" ]; then
+  mkdir -p "$PROJECT_DIR/grimoire/core"; cp "$TMP/repo/$MAP" "$PROJECT_DIR/$MAP"
+  echo "restored (was missing): $MAP"
+fi
+
+# llm_compose.md carries two user choices - the admin name and the persona
+# pointer - but the rest is engine-owned and can change structurally between
+# versions (removed keys, renamed levels). Refresh it from the repo, then
+# re-inject the two local values, so a structural change propagates without losing
+# them. This replaces the old version-only bump, which left structural edits behind.
 LC="$PROJECT_DIR/llm_compose.md"
-if [ -f "$LC" ] && [ -n "$repo_ver" ]; then
+if [ -f "$LC" ] && [ -f "$TMP/repo/llm_compose.md" ]; then
+  admin_line="$(grep -m1 '^[[:space:]]*admin:' "$LC" || true)"
+  persona_line="$(grep -m1 '^[[:space:]]*persona:' "$LC" || true)"
   cp -p "$LC" "$BK/llm_compose.md"
   had="$(unlock "$LC")"
-  sed -i.tmp "s/^\(version:[[:space:]]*\).*/\1\"${repo_ver}\"/" "$LC" && rm -f "$LC.tmp"
+  cp "$TMP/repo/llm_compose.md" "$LC"
+  [ -n "$admin_line" ] && { sed -i.tmp "s|^[[:space:]]*admin:.*|${admin_line}|" "$LC"; rm -f "$LC.tmp"; }
+  [ -n "$persona_line" ] && { sed -i.tmp "s|^[[:space:]]*persona:.*|${persona_line}|" "$LC"; rm -f "$LC.tmp"; }
   relock "$LC" "$had"
-  echo "bumped version in llm_compose.md -> ${repo_ver} (ward name and persona kept)"
+  echo "refreshed llm_compose.md -> ${repo_ver} (admin name and persona kept)"
 fi
 
 echo "Done. Backup of replaced files: $BK"

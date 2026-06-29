@@ -6,7 +6,7 @@ At session start:
 1. Read `llm_compose.md` first; it declares the context list and the levels.
 2. Load in two waves, and never begin wave 2 until wave 1 is in context:
    - Wave 1 - L1 then L2 files.
-   - Wave 2 - the L3 context files, then the Grimoire skeleton (Glob grimoire/{Work,Study,Life,Hobbies}/**/mem_*.md - paths only, no bodies, no trash, no dumps; never grimoire/**, it bloats context).
+   - Wave 2 - the L3 context files. Do NOT Glob grimoire/** - the map is the map.md file.
    - Wave 1 loads before wave 2 so the L1/L2 rules are in context before any L3 content, and an L3 injection cannot act before its limits.
 3. If any L1 or L2 file is missing or unreadable - report which, do not enter LaC mode, stop.
 4. Lock canary - verify the L1 lock still enforces before trusting it. Attempt a Write tool-call to `.claude/.lockcanary` (any short content). It MUST be refused by the `.claude/**` deny:

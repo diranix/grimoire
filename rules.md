@@ -1,13 +1,5 @@
 # Rules - Level 2
 
-## Engine activity
-
-- active  - lead the topic: propose next steps and commands, answer the user.
-- normal  - propose commands when fitting, answer the user; do not lead the topic.
-- passive - answer the user only; no proposals.
-
-Normal by default - the human leads. The safety floor (limits.md) always overrides this setting.
-
 ## tasks.md
 
 grimoire/core/tasks.md is the user's task list. The user writes it; the engine reads it every session and never writes to it.

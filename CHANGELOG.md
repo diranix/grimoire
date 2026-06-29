@@ -3,6 +3,24 @@
 All notable changes to Grimoire are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/); versioning follows [SemVer](https://semver.org/).
 
+## [0.5.1.9] - 2026-06-28
+
+### Fixed
+- **Stale `ward` terminology replaced with `admin`.** The schema reverted from `users.ward` to `users.admin`, but "ward" lingered in the installer and updater. Worst case: `lac-setup.md` told the installer to replace `YOUR_NAME` on a `ward:` line that does not exist (it is `admin:`), a broken instruction. Cleaned up across `lac-setup.md` and `lac-update.sh`.
+
+## [0.5.1.8] - 2026-06-28
+
+### Removed
+- **`engine.activity` switch.** Removed the active/normal/passive dial from `llm_compose.md` and its definitions from `rules.md`, along with the references in `lac-setup.md`.
+
+### Changed
+- **`lac-update.sh` now refreshes `llm_compose.md` structurally instead of only bumping its version line.** The old updater left structural edits behind (a removed key like `engine.activity` would linger), since it only patched the version. It now copies the repo `llm_compose.md` and re-injects the local ward name and persona pointer, so structural changes propagate while the two user choices survive. It also restores `grimoire/core/map.md` when missing (an install from before the map existed), the same repair pattern already used for `base_persona.md`.
+
+## [0.5.1.7] - 2026-06-28
+
+### Changed
+- **Route map moved to its own file `grimoire/core/map.md`; boot no longer globs the tree.** The session-start skeleton scan (Glob over grimoire/**/mem_*.md) duplicated what the route map already held. The map - every topic's mem_ path plus its keyword cloud - now lives in one file loaded at boot via the core folder, and is reconciled with the tree on !save (and !cleanup / !changetopic) rather than rebuilt from scratch. !tree still reads the live tree. Mirrored across CLAUDE.md, commands.md, lac-setup.md, and llm_compose.md (version bump).
+
 ## [0.5.1.5] - 2026-06-28
 
 ### Changed

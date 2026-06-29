@@ -1,6 +1,6 @@
 # LaC Setup
 > LLM as Code - installer for Claude Code (terminal or desktop app)
-> Version: 0.5.1.4
+> Version: 0.5.1.9
 
 ---
 
@@ -29,7 +29,7 @@ So for a manifest entry `limits.md`, fetch `https://raw.githubusercontent.com/di
 
 **Detect the mode first.** If `CLAUDE.md` and `llm_compose.md` already exist in the root, this is an UPDATE - follow the Idempotency rules below. Otherwise it is a FRESH install - build everything.
 
-**Fresh install, first action:** ask once - "What name should be set as the ward (administrator)?" Hold the answer for Step 2. On an update, do NOT ask; read the existing ward name and persona pointer from `llm_compose.md` and keep them.
+**Fresh install, first action:** ask once - "What name should be set as the administrator?" Hold the answer for Step 2. On an update, do NOT ask; read the existing admin name and persona pointer from `llm_compose.md` and keep them.
 
 On a fresh install do not pause for confirmation - run the steps in order and report what each one created.
 
@@ -61,14 +61,15 @@ Fetch each raw URL (base + the path) and write the bytes to the local path. Most
 
 | Fetch (append to raw base) | Write to | Handling |
 |---|---|---|
-| `llm_compose.md` | `llm_compose.md` | After writing, replace `YOUR_NAME` on the `ward:` line with the administrator name from the first action. Keep everything else. |
+| `llm_compose.md` | `llm_compose.md` | After writing, replace `YOUR_NAME` on the `admin:` line with the administrator name from the first action. Keep everything else. |
 | `limits.md` | `limits.md` | Verbatim. |
 | `commands.md` | `commands.md` | Verbatim. |
-| `rules.md` | `rules.md` | Verbatim. The L2 behavior-tuning file (engine activity, context budget, user-files rule, output style). |
+| `rules.md` | `rules.md` | Verbatim. The L2 behavior-tuning file (context budget, user-files rule, output style). |
 | `CLAUDE.md` | `CLAUDE.md` | Verbatim. |
 | `personas/base_persona.md` | `personas/base_persona.md` | Verbatim. The neutral default the `llm_compose.md` persona pointer names. |
 | `spells/noslop/noslop.md` | `spells/noslop/noslop.md` | Verbatim. The one bundled spell (`!cast noslop`). |
 | `grimoire/core/core.md` | `grimoire/core/core.md` | Fresh install only. If it already exists, leave it untouched - it holds the user's context. Fill `YOUR_NAME` / `YOUR_LOCATION` / `YOUR_LANGUAGE` if you have them, else leave the placeholders. |
+| `grimoire/core/map.md` | `grimoire/core/map.md` | Fresh install only. The topic route map. If it exists, leave it untouched. |
 | `grimoire/core/tasks.md` | `grimoire/core/tasks.md` | Fresh install only. The global, always-loaded task register - the user writes it themselves; the engine only reads it. If it already exists, leave it untouched - it holds the user's tasks. |
 | `.claude/write-guard.py` | `.claude/write-guard.py` | Verbatim. |
 | `.claude/settings.json` | `.claude/settings.json` | Verbatim. **Write this one LAST** - see the note below. |
@@ -80,7 +81,7 @@ Fetch each raw URL (base + the path) and write the bytes to the local path. Most
 Re-running this installer must never duplicate files or clobber data. Same path means overwrite-or-skip, never a second copy.
 
 - **Never overwrite user data.** Leave exactly as they are: everything under `grimoire/` (including `grimoire/core/core.md`), `.claude/settings.local.json`, any persona the user added, any user-added spell.
-- **Preserve choices in `llm_compose.md`.** On update keep the existing `ward:` name and the `context.persona` pointer; refresh only the rest of the file from the repo copy.
+- **Preserve choices in `llm_compose.md`.** On update keep the existing `admin:` name and the `context.persona` pointer; refresh only the rest of the file from the repo copy.
 - **Refresh engine files to the latest.** These are not user-editable, so refreshing them is the point of an update: `limits.md`, `commands.md`, `rules.md`, `CLAUDE.md`, `.claude/settings.json`, `.claude/write-guard.py`, and the bundled `spells/noslop/noslop.md`.
 - **Personas are user space.** Never overwrite a persona on update. Restore `personas/base_persona.md` only if it is missing (a broken install); if it is present, leave it exactly as it is, edited or not. This matches what `lac-update.sh` does.
 - **The locked-file caveat.** On a project that already has `.claude/settings.json`, its deny rules block the engine from rewriting the locked files (`llm_compose.md`, `limits.md`, `commands.md`, `rules.md`, `CLAUDE.md`, `.claude/**`). That is the security model working, not a failure. When a write is denied during an update, do not error out: report it and output a ready-to-run terminal command that writes the fetched content, the same way `!delete` hands off `mv`, so the user applies it outside the sandbox. The standalone updater (`lac-update.sh`) does this wholesale.
@@ -107,10 +108,10 @@ File moves and deletes are handed to your terminal.
 
 Structure:
 ├── CLAUDE.md             ← auto-loaded boot file
-├── llm_compose.md        ← entry point: levels, context, paths (carries your ward name)
+├── llm_compose.md        ← entry point: levels, context, paths (carries your admin name)
 ├── limits.md
 ├── commands.md
-├── rules.md              ← L2 behavior tuning (engine activity, budget, output style)
+├── rules.md              ← L2 behavior tuning (budget, output style)
 ├── personas/
 │   └── base_persona.md   ← active persona (neutral default; repoint llm_compose.md to swap)
 ├── spells/
@@ -120,6 +121,7 @@ Structure:
 │   └── write-guard.py    ← warn-only style + secret guard (PostToolUse)
 ├── grimoire/
 │   ├── core/core.md      ← your personal context (loaded every session)
+│   ├── core/map.md       ← topic route map (paths + keyword clouds, loaded every session)
 │   ├── core/tasks.md     ← global task register (loaded every session; you write it)
 │   └── Work/ Study/ Life/ Hobbies/   (each with a .gitkeep until first !save)
 │       └── [topic]/                  ← created on first !save
