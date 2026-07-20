@@ -1,0 +1,30 @@
+schema_version: 1
+
+app:
+    name: grimoire
+    version: "0.1"
+
+llm:
+    provider: mistral
+    model: mistral-large-latest
+    persona: .lac/souls/base_soul.md
+    context_budget: 30000
+
+paths:
+    memory: grimoire/
+    trash: trash/
+
+levels:
+    L0: [.lac/commands.py]
+    L1: [llm_compose.yaml, limits.md]
+    L2: [rules.md, souls/]
+
+context:
+    L1:
+        - .lac/law/limits.md
+    L2:
+        - .lac/law/rules.md
+    L3:
+        - grimoire/core/core.md
+        - grimoire/core/map.md
+        - grimoire/core/tasks.md
