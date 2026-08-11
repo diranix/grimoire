@@ -2,12 +2,13 @@ schema_version: 1
 
 app:
     name: grimoire
-    version: "0.1"
+    version: "0.2"
 
 llm:
     provider: mistral
     model: mistral-large-latest
     persona: .lac/souls/base_soul.md
+    max_tokens: 1500
     context_budget: 30000
 
 paths:
