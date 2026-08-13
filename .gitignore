@@ -4,6 +4,7 @@
 !/.gitignore
 !/LICENSE
 !/README.md
+!/CHANGELOG.md
 !/.lac/commands.py
 !/.lac/llm_compose.yaml
 !/.lac/l0.lock.json
